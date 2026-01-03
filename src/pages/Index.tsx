@@ -1,12 +1,31 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
+import { Hero } from '@/components/home/Hero';
+import { FeaturedProducts } from '@/components/home/FeaturedProducts';
+import { CategoryFilter } from '@/components/products/CategoryFilter';
+import { useState } from 'react';
 
 const Index = () => {
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1">
+        <Hero />
+        
+        {/* Categories */}
+        <section className="container mx-auto px-4 py-8">
+          <h2 className="font-display text-2xl font-bold mb-6">Catégories</h2>
+          <CategoryFilter
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+          />
+        </section>
+
+        <FeaturedProducts />
+      </main>
+      <Footer />
     </div>
   );
 };
