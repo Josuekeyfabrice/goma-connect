@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Search, Heart, MessageCircle, User, Plus, LogOut } from 'lucide-react';
+import { Menu, X, Search, Heart, MessageCircle, User, Plus, LogOut, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
@@ -100,6 +100,12 @@ export const Header = () => {
                     <DropdownMenuItem asChild>
                       <Link to="/my-products" className="cursor-pointer">
                         Mes Annonces
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/call-history" className="cursor-pointer">
+                        <Phone className="mr-2 h-4 w-4" />
+                        Historique d'appels
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
