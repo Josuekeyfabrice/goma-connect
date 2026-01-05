@@ -95,9 +95,11 @@ const Auth = () => {
         } else {
           toast({
             title: 'Compte créé !',
-            description: 'Bienvenue sur GOMACASCADE !',
+            description: 'Vous pouvez maintenant vous connecter.',
           });
-          navigate('/');
+          // Switch to login mode after successful signup
+          setIsSignUp(false);
+          setFormData((prev) => ({ ...prev, password: '', confirmPassword: '' }));
         }
       } else {
         const result = loginSchema.safeParse(formData);

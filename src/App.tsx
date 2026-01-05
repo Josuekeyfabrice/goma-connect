@@ -11,6 +11,9 @@ import Profile from "./pages/Profile";
 import Messages from "./pages/Messages";
 import Call from "./pages/Call";
 import CallHistory from "./pages/CallHistory";
+import ProductDetail from "./pages/ProductDetail";
+import MyProducts from "./pages/MyProducts";
+import Favorites from "./pages/Favorites";
 import NotFound from "./pages/NotFound";
 import { useOnlineStatus } from "./hooks/useOnlineStatus";
 
@@ -37,6 +40,9 @@ const App = () => (
             <Route path="/messages" element={<Messages />} />
             <Route path="/call/:userId" element={<Call />} />
             <Route path="/call-history" element={<CallHistory />} />
+            <Route path="/product/:id" element={<ProductDetail />} />
+            <Route path="/my-products" element={<MyProducts />} />
+            <Route path="/favorites" element={<Favorites />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
