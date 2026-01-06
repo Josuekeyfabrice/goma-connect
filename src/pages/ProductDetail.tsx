@@ -12,6 +12,7 @@ import { Product, Profile } from '@/types/database';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { OnlineIndicator } from '@/components/ui/OnlineIndicator';
+import { SellerReviews } from '@/components/reviews/SellerReviews';
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -455,6 +456,13 @@ const ProductDetail = () => {
                 </a>
               </div>
             )}
+
+            {/* Seller Reviews */}
+            <Separator />
+            <div>
+              <h2 className="text-lg font-semibold mb-4">Avis sur le vendeur</h2>
+              <SellerReviews sellerId={product.seller_id} productId={product.id} />
+            </div>
           </div>
         </div>
       </main>
