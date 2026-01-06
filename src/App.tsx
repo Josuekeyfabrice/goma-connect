@@ -16,6 +16,7 @@ import MyProducts from "./pages/MyProducts";
 import Favorites from "./pages/Favorites";
 import Search from "./pages/Search";
 import EditProduct from "./pages/EditProduct";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import { useOnlineStatus } from "./hooks/useOnlineStatus";
 import { useNotifications } from "./hooks/useNotifications";
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/search" element={<Search />} />
             <Route path="/edit-product/:id" element={<EditProduct />} />
+            <Route path="/admin" element={<Admin />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
