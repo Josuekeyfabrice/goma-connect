@@ -14,13 +14,17 @@ import CallHistory from "./pages/CallHistory";
 import ProductDetail from "./pages/ProductDetail";
 import MyProducts from "./pages/MyProducts";
 import Favorites from "./pages/Favorites";
+import Search from "./pages/Search";
+import EditProduct from "./pages/EditProduct";
 import NotFound from "./pages/NotFound";
 import { useOnlineStatus } from "./hooks/useOnlineStatus";
+import { useNotifications } from "./hooks/useNotifications";
 
 const queryClient = new QueryClient();
 
 const OnlineStatusTracker = () => {
   useOnlineStatus();
+  useNotifications();
   return null;
 };
 
@@ -43,6 +47,8 @@ const App = () => (
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/my-products" element={<MyProducts />} />
             <Route path="/favorites" element={<Favorites />} />
+            <Route path="/search" element={<Search />} />
+            <Route path="/edit-product/:id" element={<EditProduct />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
