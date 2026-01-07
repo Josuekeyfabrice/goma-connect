@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Loader2, Users, Package, Flag, Search, 
-  CheckCircle, XCircle, Eye, Trash2, Shield 
+  CheckCircle, XCircle, Eye, Trash2, Shield, Star 
 } from 'lucide-react';
 
 const Admin = () => {
@@ -138,6 +138,23 @@ const Admin = () => {
       toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
     } else {
       toast({ title: 'Succès', description: 'Produit supprimé' });
+      fetchData();
+    }
+  };
+
+  const toggleProductFeatured = async (productId: string, currentStatus: boolean) => {
+    const { error } = await supabase
+      .from('products')
+      .update({ is_featured: !currentStatus })
+      .eq('id', productId);
+
+    if (error) {
+      toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ 
+        title: 'Succès', 
+        description: currentStatus ? 'Produit retiré des vedettes' : 'Produit mis en vedette' 
+      });
       fetchData();
     }
   };
@@ -270,7 +287,15 @@ const Admin = () => {
                                 className="w-12 h-12 object-cover rounded"
                               />
                             )}
-                            <span className="font-medium">{product.name}</span>
+                            <div>
+                              <span className="font-medium">{product.name}</span>
+                              {product.is_featured && (
+                                <Badge className="ml-2 bg-primary text-primary-foreground">
+                                  <Star className="w-3 h-3 mr-1 fill-current" />
+                                  Vedette
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                         </td>
                         <td className="p-4">{product.price.toLocaleString()} CDF</td>
@@ -291,13 +316,23 @@ const Admin = () => {
                               size="sm"
                               variant="ghost"
                               onClick={() => navigate(`/product/${product.id}`)}
+                              title="Voir le produit"
                             >
                               <Eye className="w-4 h-4" />
                             </Button>
                             <Button
                               size="sm"
                               variant="ghost"
+                              onClick={() => toggleProductFeatured(product.id, product.is_featured)}
+                              title={product.is_featured ? "Retirer des vedettes" : "Mettre en vedette"}
+                            >
+                              <Star className={`w-4 h-4 ${product.is_featured ? 'fill-primary text-primary' : ''}`} />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
                               onClick={() => toggleProductApproval(product.id, product.is_approved)}
+                              title={product.is_approved ? "Désapprouver" : "Approuver"}
                             >
                               {product.is_approved ? (
                                 <XCircle className="w-4 h-4 text-destructive" />
@@ -309,6 +344,7 @@ const Admin = () => {
                               size="sm"
                               variant="ghost"
                               onClick={() => deleteProduct(product.id)}
+                              title="Supprimer"
                             >
                               <Trash2 className="w-4 h-4 text-destructive" />
                             </Button>

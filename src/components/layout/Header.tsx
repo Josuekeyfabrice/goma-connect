@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Search, Heart, MessageCircle, User, Plus, LogOut, Phone } from 'lucide-react';
+import { Menu, X, Search, Heart, MessageCircle, User, Plus, LogOut, Phone, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,8 +17,29 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkAdminRole = async () => {
+      if (!user) {
+        setIsAdmin(false);
+        return;
+      }
+      
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+      
+      setIsAdmin(!!data);
+    };
+
+    checkAdminRole();
+  }, [user]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,6 +130,14 @@ export const Header = () => {
                         Historique d'appels
                       </Link>
                     </DropdownMenuItem>
+                    {isAdmin && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin" className="cursor-pointer text-primary">
+                          <Shield className="mr-2 h-4 w-4" />
+                          Admin
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive">
                       <LogOut className="mr-2 h-4 w-4" />
@@ -183,6 +213,14 @@ export const Header = () => {
                     Mes Annonces
                   </Link>
                 </Button>
+                {isAdmin && (
+                  <Button variant="ghost" className="justify-start text-primary" asChild>
+                    <Link to="/admin" onClick={() => setIsMenuOpen(false)}>
+                      <Shield className="mr-2 h-5 w-5" />
+                      Admin
+                    </Link>
+                  </Button>
+                )}
                 <Button className="justify-start gradient-primary text-primary-foreground" asChild>
                   <Link to="/sell" onClick={() => setIsMenuOpen(false)}>
                     <Plus className="mr-2 h-4 w-4" />

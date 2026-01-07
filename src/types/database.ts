@@ -25,6 +25,7 @@ export interface Product {
   images: string[];
   is_active: boolean;
   is_approved: boolean;
+  is_featured: boolean;
   views_count: number;
   created_at: string;
   updated_at: string;
