@@ -144,6 +144,7 @@ export type Database = {
           images: string[] | null
           is_active: boolean | null
           is_approved: boolean | null
+          is_featured: boolean | null
           name: string
           phone: string
           price: number
@@ -162,6 +163,7 @@ export type Database = {
           images?: string[] | null
           is_active?: boolean | null
           is_approved?: boolean | null
+          is_featured?: boolean | null
           name: string
           phone: string
           price: number
@@ -180,6 +182,7 @@ export type Database = {
           images?: string[] | null
           is_active?: boolean | null
           is_approved?: boolean | null
+          is_featured?: boolean | null
           name?: string
           phone?: string
           price?: number

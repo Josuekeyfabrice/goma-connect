@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProductCard } from '@/components/products/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types/database';
 import { useAuth } from '@/hooks/useAuth';
 
 export const FeaturedProducts = () => {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [recentProducts, setRecentProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const { user } = useAuth();
@@ -23,7 +25,21 @@ export const FeaturedProducts = () => {
 
   const fetchProducts = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch featured products first
+      const { data: featured, error: featuredError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('is_active', true)
+        .eq('is_approved', true)
+        .eq('is_featured', true)
+        .order('created_at', { ascending: false })
+        .limit(4);
+
+      if (featuredError) throw featuredError;
+      setFeaturedProducts(featured || []);
+
+      // Fetch recent products
+      const { data: recent, error: recentError } = await supabase
         .from('products')
         .select('*')
         .eq('is_active', true)
@@ -31,8 +47,8 @@ export const FeaturedProducts = () => {
         .order('created_at', { ascending: false })
         .limit(8);
 
-      if (error) throw error;
-      setProducts(data || []);
+      if (recentError) throw recentError;
+      setRecentProducts(recent || []);
     } catch (error) {
       console.error('Error fetching products:', error);
     } finally {
@@ -106,36 +122,64 @@ export const FeaturedProducts = () => {
   }
 
   return (
-    <section className="container mx-auto px-4 py-12">
-      <div className="flex items-center justify-between">
-        <h2 className="font-display text-2xl font-bold md:text-3xl">Annonces récentes</h2>
-        <Button variant="ghost" className="gap-2" asChild>
-          <Link to="/search">
-            Voir tout
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </Button>
-      </div>
-      
-      {products.length === 0 ? (
-        <div className="mt-8 rounded-2xl border-2 border-dashed p-12 text-center">
-          <p className="text-muted-foreground">Aucune annonce pour le moment.</p>
-          <Button className="mt-4 gradient-primary text-primary-foreground" asChild>
-            <Link to="/sell">Publier la première annonce</Link>
+    <>
+      {/* Featured Products Section */}
+      {featuredProducts.length > 0 && (
+        <section className="container mx-auto px-4 py-12 bg-gradient-to-r from-primary/5 to-primary/10 rounded-2xl my-8">
+          <div className="flex items-center gap-2 mb-6">
+            <Star className="h-6 w-6 text-primary fill-primary" />
+            <h2 className="font-display text-2xl font-bold md:text-3xl">Produits en vedette</h2>
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {featuredProducts.map((product) => (
+              <div key={product.id} className="relative">
+                <Badge className="absolute top-2 left-2 z-10 bg-primary text-primary-foreground">
+                  <Star className="h-3 w-3 mr-1 fill-current" />
+                  En vedette
+                </Badge>
+                <ProductCard
+                  product={product}
+                  onFavorite={user ? handleFavorite : undefined}
+                  isFavorite={favorites.has(product.id)}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Recent Products Section */}
+      <section className="container mx-auto px-4 py-12">
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-2xl font-bold md:text-3xl">Annonces récentes</h2>
+          <Button variant="ghost" className="gap-2" asChild>
+            <Link to="/search">
+              Voir tout
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </Button>
         </div>
-      ) : (
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onFavorite={user ? handleFavorite : undefined}
-              isFavorite={favorites.has(product.id)}
-            />
-          ))}
-        </div>
-      )}
-    </section>
+        
+        {recentProducts.length === 0 ? (
+          <div className="mt-8 rounded-2xl border-2 border-dashed p-12 text-center">
+            <p className="text-muted-foreground">Aucune annonce pour le moment.</p>
+            <Button className="mt-4 gradient-primary text-primary-foreground" asChild>
+              <Link to="/sell">Publier la première annonce</Link>
+            </Button>
+          </div>
+        ) : (
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {recentProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onFavorite={user ? handleFavorite : undefined}
+                isFavorite={favorites.has(product.id)}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+    </>
   );
 };
