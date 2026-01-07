@@ -27,9 +27,10 @@ const Messages = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const initialUser = searchParams.get('user') || searchParams.get('to');
   
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [selectedConversation, setSelectedConversation] = useState<string | null>(searchParams.get('user'));
+  const [selectedConversation, setSelectedConversation] = useState<string | null>(initialUser);
   const [selectedPartner, setSelectedPartner] = useState<Profile | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -145,6 +146,9 @@ const Messages = () => {
       if (profileData) {
         setSelectedPartner(profileData as Profile);
       }
+
+      // If this is a new conversation from product page, check if conversation exists
+      const productId = searchParams.get('product');
 
       // Load messages
       const { data: messagesData } = await supabase

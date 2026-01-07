@@ -7,19 +7,32 @@ import { Footer } from '@/components/layout/Footer';
 import { ProductCard } from '@/components/products/ProductCard';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { Search as SearchIcon, Filter, X } from 'lucide-react';
+import { Search as SearchIcon, Filter, X, SlidersHorizontal, ArrowUpDown } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+
+const SORT_OPTIONS = [
+  { value: 'recent', label: 'Plus récent' },
+  { value: 'oldest', label: 'Plus ancien' },
+  { value: 'price_asc', label: 'Prix croissant' },
+  { value: 'price_desc', label: 'Prix décroissant' },
+  { value: 'popular', label: 'Plus populaire' },
+];
 
 const Search = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const { user } = useAuth();
 
   const [query, setQuery] = useState(searchParams.get('q') || '');
   const [category, setCategory] = useState(searchParams.get('category') || '');
   const [city, setCity] = useState(searchParams.get('city') || '');
+  const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'recent');
   const [priceRange, setPriceRange] = useState<[number, number]>([
     Number(searchParams.get('minPrice')) || 0,
     Number(searchParams.get('maxPrice')) || 10000000
@@ -27,6 +40,33 @@ const Search = () => {
 
   const fetchProducts = async () => {
     setLoading(true);
+    
+    // Determine sort order
+    let orderColumn = 'created_at';
+    let ascending = false;
+    
+    switch (sortBy) {
+      case 'oldest':
+        orderColumn = 'created_at';
+        ascending = true;
+        break;
+      case 'price_asc':
+        orderColumn = 'price';
+        ascending = true;
+        break;
+      case 'price_desc':
+        orderColumn = 'price';
+        ascending = false;
+        break;
+      case 'popular':
+        orderColumn = 'views_count';
+        ascending = false;
+        break;
+      default:
+        orderColumn = 'created_at';
+        ascending = false;
+    }
+
     let queryBuilder = supabase
       .from('products')
       .select('*')
@@ -34,7 +74,7 @@ const Search = () => {
       .eq('is_approved', true)
       .gte('price', priceRange[0])
       .lte('price', priceRange[1])
-      .order('created_at', { ascending: false });
+      .order(orderColumn, { ascending });
 
     if (query) {
       queryBuilder = queryBuilder.or(`name.ilike.%${query}%,description.ilike.%${query}%`);
@@ -56,28 +96,83 @@ const Search = () => {
     setLoading(false);
   };
 
+  const fetchFavorites = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('favorites')
+      .select('product_id')
+      .eq('user_id', user.id);
+    if (data) {
+      setFavorites(new Set(data.map(f => f.product_id)));
+    }
+  };
+
+  const handleFavorite = async (productId: string) => {
+    if (!user) return;
+    const isFav = favorites.has(productId);
+    
+    try {
+      if (isFav) {
+        await supabase.from('favorites').delete().eq('user_id', user.id).eq('product_id', productId);
+        setFavorites(prev => { const next = new Set(prev); next.delete(productId); return next; });
+      } else {
+        await supabase.from('favorites').insert({ user_id: user.id, product_id: productId });
+        setFavorites(prev => new Set(prev).add(productId));
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
-  }, []);
+    if (user) {
+      fetchFavorites();
+    }
+  }, [user]);
+
+  // Count active filters
+  const activeFiltersCount = [
+    category,
+    city,
+    priceRange[0] > 0 || priceRange[1] < 10000000,
+  ].filter(Boolean).length;
 
   const handleSearch = () => {
     const params = new URLSearchParams();
     if (query) params.set('q', query);
     if (category) params.set('category', category);
     if (city) params.set('city', city);
+    if (sortBy !== 'recent') params.set('sort', sortBy);
     if (priceRange[0] > 0) params.set('minPrice', priceRange[0].toString());
     if (priceRange[1] < 10000000) params.set('maxPrice', priceRange[1].toString());
     setSearchParams(params);
     fetchProducts();
   };
 
+  const removeFilter = (filterType: 'category' | 'city' | 'price') => {
+    switch (filterType) {
+      case 'category':
+        setCategory('');
+        break;
+      case 'city':
+        setCity('');
+        break;
+      case 'price':
+        setPriceRange([0, 10000000]);
+        break;
+    }
+    setTimeout(() => handleSearch(), 0);
+  };
+
   const clearFilters = () => {
     setQuery('');
     setCategory('');
     setCity('');
+    setSortBy('recent');
     setPriceRange([0, 10000000]);
     setSearchParams({});
-    fetchProducts();
+    setTimeout(() => fetchProducts(), 0);
   };
 
   const formatPrice = (price: number) => {
@@ -97,8 +192,8 @@ const Search = () => {
           <h1 className="text-3xl font-bold text-foreground mb-4">Recherche avancée</h1>
           
           {/* Search bar */}
-          <div className="flex gap-2 mb-4">
-            <div className="relative flex-1">
+          <div className="flex flex-wrap gap-2 mb-4">
+            <div className="relative flex-1 min-w-[200px]">
               <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
               <Input
                 type="text"
@@ -109,14 +204,57 @@ const Search = () => {
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
             </div>
-            <Button onClick={() => setShowFilters(!showFilters)} variant="outline">
-              <Filter className="w-5 h-5 mr-2" />
+            <Select value={sortBy} onValueChange={(value) => { setSortBy(value); }}>
+              <SelectTrigger className="w-[180px]">
+                <ArrowUpDown className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Trier par" />
+              </SelectTrigger>
+              <SelectContent>
+                {SORT_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button onClick={() => setShowFilters(!showFilters)} variant="outline" className="relative">
+              <SlidersHorizontal className="w-5 h-5 mr-2" />
               Filtres
+              {activeFiltersCount > 0 && (
+                <Badge className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                  {activeFiltersCount}
+                </Badge>
+              )}
             </Button>
             <Button onClick={handleSearch}>
               Rechercher
             </Button>
           </div>
+
+          {/* Active filters */}
+          {(category || city || priceRange[0] > 0 || priceRange[1] < 10000000) && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {category && (
+                <Badge variant="secondary" className="gap-1">
+                  {category}
+                  <X className="w-3 h-3 cursor-pointer" onClick={() => removeFilter('category')} />
+                </Badge>
+              )}
+              {city && (
+                <Badge variant="secondary" className="gap-1">
+                  {city}
+                  <X className="w-3 h-3 cursor-pointer" onClick={() => removeFilter('city')} />
+                </Badge>
+              )}
+              {(priceRange[0] > 0 || priceRange[1] < 10000000) && (
+                <Badge variant="secondary" className="gap-1">
+                  {formatPrice(priceRange[0])} - {formatPrice(priceRange[1])}
+                  <X className="w-3 h-3 cursor-pointer" onClick={() => removeFilter('price')} />
+                </Badge>
+              )}
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="h-6 px-2 text-xs">
+                Tout effacer
+              </Button>
+            </div>
+          )}
 
           {/* Filters panel */}
           {showFilters && (
@@ -203,7 +341,12 @@ const Search = () => {
             <p className="text-muted-foreground mb-4">{products.length} résultat(s) trouvé(s)</p>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard 
+                  key={product.id} 
+                  product={product}
+                  onFavorite={user ? handleFavorite : undefined}
+                  isFavorite={favorites.has(product.id)}
+                />
               ))}
             </div>
           </>

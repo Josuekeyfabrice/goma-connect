@@ -3,7 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Menu, X, Search, Heart, MessageCircle, User, Plus, LogOut, Phone, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
+import { useNotificationCounts } from '@/hooks/useNotificationCounts';
 import { supabase } from '@/integrations/supabase/client';
 import {
   DropdownMenu,
@@ -19,6 +21,7 @@ export const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const { user, signOut } = useAuth();
+  const { counts } = useNotificationCounts();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -90,9 +93,14 @@ export const Header = () => {
                     <Heart className="h-5 w-5" />
                   </Link>
                 </Button>
-                <Button variant="ghost" size="icon" asChild>
+                <Button variant="ghost" size="icon" asChild className="relative">
                   <Link to="/messages">
                     <MessageCircle className="h-5 w-5" />
+                    {counts.unreadMessages > 0 && (
+                      <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs bg-destructive text-destructive-foreground">
+                        {counts.unreadMessages > 9 ? '9+' : counts.unreadMessages}
+                      </Badge>
+                    )}
                   </Link>
                 </Button>
                 <Button className="gap-2 gradient-primary text-primary-foreground" asChild>
@@ -196,10 +204,15 @@ export const Header = () => {
                     Favoris
                   </Link>
                 </Button>
-                <Button variant="ghost" className="justify-start" asChild>
+                <Button variant="ghost" className="justify-start relative" asChild>
                   <Link to="/messages" onClick={() => setIsMenuOpen(false)}>
                     <MessageCircle className="mr-2 h-5 w-5" />
                     Messages
+                    {counts.unreadMessages > 0 && (
+                      <Badge className="ml-auto h-5 w-5 p-0 flex items-center justify-center text-xs bg-destructive text-destructive-foreground">
+                        {counts.unreadMessages > 9 ? '9+' : counts.unreadMessages}
+                      </Badge>
+                    )}
                   </Link>
                 </Button>
                 <Button variant="ghost" className="justify-start" asChild>
