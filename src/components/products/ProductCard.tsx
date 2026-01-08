@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom';
-import { Heart, MapPin, Eye } from 'lucide-react';
+import { Heart, MapPin, Eye, GitCompare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Product } from '@/types/database';
 import { formatPrice } from '@/lib/utils';
+import { useCompare } from '@/components/compare/CompareContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProductCardProps {
   product: Product;
@@ -14,6 +16,22 @@ interface ProductCardProps {
 
 export const ProductCard = ({ product, onFavorite, isFavorite }: ProductCardProps) => {
   const imageUrl = product.images?.[0] || '/placeholder.svg';
+  const { addToCompare, removeFromCompare, isInCompare } = useCompare();
+  const { toast } = useToast();
+  const inCompare = isInCompare(product.id);
+
+  const hasDiscount = product.original_price && product.discount_percentage && product.discount_percentage > 0;
+
+  const handleCompare = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (inCompare) {
+      removeFromCompare(product.id);
+      toast({ title: 'Retiré de la comparaison' });
+    } else {
+      addToCompare(product);
+      toast({ title: 'Ajouté à la comparaison' });
+    }
+  };
 
   return (
     <Card className="group overflow-hidden transition-all hover:shadow-card animate-fade-in">
@@ -24,26 +42,43 @@ export const ProductCard = ({ product, onFavorite, isFavorite }: ProductCardProp
             alt={product.name}
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
-          {product.category && (
-            <Badge className="absolute left-3 top-3 bg-secondary text-secondary-foreground">
-              {product.category}
-            </Badge>
-          )}
-          {onFavorite && (
+          <div className="absolute left-3 top-3 flex flex-col gap-1">
+            {product.category && (
+              <Badge className="bg-secondary text-secondary-foreground">
+                {product.category}
+              </Badge>
+            )}
+            {hasDiscount && (
+              <Badge className="bg-destructive text-destructive-foreground">
+                -{product.discount_percentage}%
+              </Badge>
+            )}
+          </div>
+          <div className="absolute right-2 top-2 flex flex-col gap-1">
+            {onFavorite && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onFavorite(product.id);
+                }}
+              >
+                <Heart
+                  className={`h-4 w-4 ${isFavorite ? 'fill-primary text-primary' : 'text-muted-foreground'}`}
+                />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
-              className="absolute right-2 top-2 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background"
-              onClick={(e) => {
-                e.preventDefault();
-                onFavorite(product.id);
-              }}
+              className={`h-8 w-8 rounded-full backdrop-blur-sm ${inCompare ? 'bg-primary text-primary-foreground' : 'bg-background/80 hover:bg-background'}`}
+              onClick={handleCompare}
             >
-              <Heart
-                className={`h-4 w-4 ${isFavorite ? 'fill-primary text-primary' : 'text-muted-foreground'}`}
-              />
+              <GitCompare className="h-4 w-4" />
             </Button>
-          )}
+          </div>
         </div>
       </Link>
       <CardContent className="p-4">
@@ -52,9 +87,16 @@ export const ProductCard = ({ product, onFavorite, isFavorite }: ProductCardProp
             {product.name}
           </h3>
         </Link>
-        <p className="mt-2 text-xl font-bold text-primary">
-          {formatPrice(product.price)}
-        </p>
+        <div className="mt-2 flex items-baseline gap-2">
+          <span className="text-xl font-bold text-primary">
+            {formatPrice(product.price)}
+          </span>
+          {hasDiscount && (
+            <span className="text-sm line-through text-muted-foreground">
+              {formatPrice(product.original_price!)}
+            </span>
+          )}
+        </div>
         <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
           <div className="flex items-center gap-1">
             <MapPin className="h-3.5 w-3.5" />

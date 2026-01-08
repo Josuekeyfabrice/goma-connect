@@ -140,12 +140,14 @@ export type Database = {
           city: string
           created_at: string
           description: string | null
+          discount_percentage: number | null
           id: string
           images: string[] | null
           is_active: boolean | null
           is_approved: boolean | null
           is_featured: boolean | null
           name: string
+          original_price: number | null
           phone: string
           price: number
           seller_id: string
@@ -159,12 +161,14 @@ export type Database = {
           city?: string
           created_at?: string
           description?: string | null
+          discount_percentage?: number | null
           id?: string
           images?: string[] | null
           is_active?: boolean | null
           is_approved?: boolean | null
           is_featured?: boolean | null
           name: string
+          original_price?: number | null
           phone: string
           price: number
           seller_id: string
@@ -178,12 +182,14 @@ export type Database = {
           city?: string
           created_at?: string
           description?: string | null
+          discount_percentage?: number | null
           id?: string
           images?: string[] | null
           is_active?: boolean | null
           is_approved?: boolean | null
           is_featured?: boolean | null
           name?: string
+          original_price?: number | null
           phone?: string
           price?: number
           seller_id?: string

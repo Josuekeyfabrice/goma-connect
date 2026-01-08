@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Heart, Phone, MessageCircle, MapPin, Eye, ArrowLeft, ChevronLeft, ChevronRight, Share2 } from 'lucide-react';
+import { Heart, Phone, MessageCircle, MapPin, Eye, ArrowLeft, ChevronLeft, ChevronRight, Share2, Flag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,6 +13,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { OnlineIndicator } from '@/components/ui/OnlineIndicator';
 import { SellerReviews } from '@/components/reviews/SellerReviews';
+import { ReportDialog } from '@/components/reports/ReportDialog';
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -355,10 +356,21 @@ const ProductDetail = () => {
                   </Button>
                 </div>
               </div>
-              
-              <p className="text-3xl font-bold text-primary mt-4">
-                {formatPrice(product.price)}
-              </p>
+              <div className="mt-4 flex items-baseline gap-3">
+                <span className="text-3xl font-bold text-primary">
+                  {formatPrice(product.price)}
+                </span>
+                {product.original_price && product.discount_percentage && product.discount_percentage > 0 && (
+                  <>
+                    <span className="text-lg line-through text-muted-foreground">
+                      {formatPrice(product.original_price)}
+                    </span>
+                    <Badge className="bg-destructive text-destructive-foreground">
+                      -{product.discount_percentage}%
+                    </Badge>
+                  </>
+                )}
+              </div>
             </div>
 
             <div className="flex items-center gap-4 text-muted-foreground">
@@ -455,6 +467,13 @@ const ProductDetail = () => {
                 >
                   📞 {product.phone}
                 </a>
+              </div>
+            )}
+
+            {/* Report button */}
+            {user?.id !== product.seller_id && (
+              <div className="flex justify-end">
+                <ReportDialog productId={product.id} />
               </div>
             )}
 
