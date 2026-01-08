@@ -11,8 +11,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Loader2, Users, Package, Flag, Search, 
-  CheckCircle, XCircle, Eye, Trash2, Shield, Star 
+  CheckCircle, XCircle, Eye, Trash2, Shield, Star, Percent
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
@@ -155,6 +163,23 @@ const Admin = () => {
         title: 'Succès', 
         description: currentStatus ? 'Produit retiré des vedettes' : 'Produit mis en vedette' 
       });
+      fetchData();
+    }
+  };
+
+  const setProductDiscount = async (productId: string, originalPrice: number | null, discountPercentage: number | null) => {
+    const { error } = await supabase
+      .from('products')
+      .update({ 
+        original_price: originalPrice,
+        discount_percentage: discountPercentage 
+      })
+      .eq('id', productId);
+
+    if (error) {
+      toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Succès', description: 'Promotion mise à jour' });
       fetchData();
     }
   };
@@ -328,6 +353,71 @@ const Admin = () => {
                             >
                               <Star className={`w-4 h-4 ${product.is_featured ? 'fill-primary text-primary' : ''}`} />
                             </Button>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  title="Gérer la promotion"
+                                >
+                                  <Percent className={`w-4 h-4 ${product.discount_percentage ? 'text-destructive' : ''}`} />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Gérer la promotion</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4">
+                                  <div className="space-y-2">
+                                    <Label>Prix actuel: {product.price.toLocaleString()} CDF</Label>
+                                  </div>
+                                  <form onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const formData = new FormData(e.currentTarget);
+                                    const origPrice = formData.get('original_price') as string;
+                                    const discPercent = formData.get('discount_percentage') as string;
+                                    setProductDiscount(
+                                      product.id, 
+                                      origPrice ? parseFloat(origPrice) : null,
+                                      discPercent ? parseInt(discPercent) : null
+                                    );
+                                  }} className="space-y-4">
+                                    <div className="space-y-2">
+                                      <Label htmlFor="original_price">Prix original (avant réduction)</Label>
+                                      <Input 
+                                        id="original_price" 
+                                        name="original_price"
+                                        type="number" 
+                                        defaultValue={product.original_price || ''} 
+                                        placeholder="Prix original"
+                                      />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label htmlFor="discount_percentage">Pourcentage de réduction (%)</Label>
+                                      <Input 
+                                        id="discount_percentage" 
+                                        name="discount_percentage"
+                                        type="number" 
+                                        min="0"
+                                        max="100"
+                                        defaultValue={product.discount_percentage || ''} 
+                                        placeholder="Ex: 20"
+                                      />
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button type="submit" className="flex-1">Appliquer</Button>
+                                      <Button 
+                                        type="button" 
+                                        variant="outline"
+                                        onClick={() => setProductDiscount(product.id, null, null)}
+                                      >
+                                        Retirer
+                                      </Button>
+                                    </div>
+                                  </form>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
                             <Button
                               size="sm"
                               variant="ghost"

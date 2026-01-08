@@ -4,6 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { CompareProvider } from "@/components/compare/CompareContext";
+import { CompareBar } from "@/components/compare/CompareBar";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Sell from "./pages/Sell";
@@ -18,6 +20,7 @@ import Search from "./pages/Search";
 import EditProduct from "./pages/EditProduct";
 import Admin from "./pages/Admin";
 import SellerProfile from "./pages/SellerProfile";
+import Compare from "./pages/Compare";
 import NotFound from "./pages/NotFound";
 import { useOnlineStatus } from "./hooks/useOnlineStatus";
 import { useNotifications } from "./hooks/useNotifications";
@@ -33,31 +36,35 @@ const OnlineStatusTracker = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <OnlineStatusTracker />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/sell" element={<Sell />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/messages" element={<Messages />} />
-            <Route path="/call/:userId" element={<Call />} />
-            <Route path="/call-history" element={<CallHistory />} />
-            <Route path="/product/:id" element={<ProductDetail />} />
-            <Route path="/my-products" element={<MyProducts />} />
-            <Route path="/favorites" element={<Favorites />} />
-            <Route path="/search" element={<Search />} />
-            <Route path="/edit-product/:id" element={<EditProduct />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/seller/:sellerId" element={<SellerProfile />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
+      <CompareProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <OnlineStatusTracker />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/sell" element={<Sell />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/messages" element={<Messages />} />
+              <Route path="/call/:userId" element={<Call />} />
+              <Route path="/call-history" element={<CallHistory />} />
+              <Route path="/product/:id" element={<ProductDetail />} />
+              <Route path="/my-products" element={<MyProducts />} />
+              <Route path="/favorites" element={<Favorites />} />
+              <Route path="/search" element={<Search />} />
+              <Route path="/edit-product/:id" element={<EditProduct />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/seller/:sellerId" element={<SellerProfile />} />
+              <Route path="/compare" element={<Compare />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <CompareBar />
+          </AuthProvider>
+        </BrowserRouter>
+      </CompareProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

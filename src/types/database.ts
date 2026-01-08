@@ -17,6 +17,8 @@ export interface Product {
   name: string;
   description: string | null;
   price: number;
+  original_price: number | null;
+  discount_percentage: number | null;
   category: string | null;
   city: string;
   avenue: string | null;
