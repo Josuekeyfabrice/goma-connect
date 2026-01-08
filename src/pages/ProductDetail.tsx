@@ -390,7 +390,7 @@ const ProductDetail = () => {
             {/* Seller Info */}
             <Card>
               <CardContent className="p-4">
-                <div className="flex items-center gap-4">
+                <Link to={`/seller/${product.seller_id}`} className="flex items-center gap-4 hover:opacity-80 transition-opacity">
                   <div className="relative">
                     <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
                       {seller?.avatar_url ? (
@@ -413,12 +413,13 @@ const ProductDetail = () => {
                     )}
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold">{seller?.full_name || 'Vendeur'}</h3>
+                    <h3 className="font-semibold text-foreground">{seller?.full_name || 'Vendeur'}</h3>
                     <p className="text-sm text-muted-foreground">
                       {seller?.is_online ? 'En ligne' : 'Hors ligne'}
                     </p>
+                    <p className="text-xs text-primary mt-1">Voir le profil →</p>
                   </div>
-                </div>
+                </Link>
               </CardContent>
             </Card>
 
