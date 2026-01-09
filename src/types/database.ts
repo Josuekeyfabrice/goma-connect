@@ -6,6 +6,7 @@ export interface Profile {
   avatar_url: string | null;
   city: string | null;
   is_online: boolean;
+  is_verified: boolean;
   last_seen: string;
   created_at: string;
   updated_at: string;

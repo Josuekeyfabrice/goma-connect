@@ -206,6 +206,7 @@ export type Database = {
           full_name: string | null
           id: string
           is_online: boolean | null
+          is_verified: boolean | null
           last_seen: string | null
           phone: string | null
           updated_at: string
@@ -218,6 +219,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_online?: boolean | null
+          is_verified?: boolean | null
           last_seen?: string | null
           phone?: string | null
           updated_at?: string
@@ -230,6 +232,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_online?: boolean | null
+          is_verified?: boolean | null
           last_seen?: string | null
           phone?: string | null
           updated_at?: string

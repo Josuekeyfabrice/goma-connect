@@ -12,6 +12,7 @@ import { Footer } from '@/components/layout/Footer';
 import { OnlineIndicator } from '@/components/ui/OnlineIndicator';
 import { ProductCard } from '@/components/products/ProductCard';
 import { SellerReviews } from '@/components/reviews/SellerReviews';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { useAuth } from '@/hooks/useAuth';
 import { Product, Profile } from '@/types/database';
 import { formatDistanceToNow } from 'date-fns';
@@ -180,7 +181,10 @@ const SellerProfile = () => {
 
               {/* Info */}
               <div className="flex-1">
-                <h1 className="text-2xl font-bold font-display">{seller.full_name || 'Vendeur'}</h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-2xl font-bold font-display">{seller.full_name || 'Vendeur'}</h1>
+                  {seller.is_verified && <VerifiedBadge size="lg" />}
+                </div>
                 <div className="flex flex-wrap items-center gap-4 mt-2 text-muted-foreground">
                   {seller.city && (
                     <div className="flex items-center gap-1">

@@ -11,8 +11,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Loader2, Users, Package, Flag, Search, 
-  CheckCircle, XCircle, Eye, Trash2, Shield, Star, Percent
+  CheckCircle, XCircle, Eye, Trash2, Shield, Star, Percent, BadgeCheck, BarChart3
 } from 'lucide-react';
+import { DashboardAnalytics } from '@/components/admin/DashboardAnalytics';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import {
   Dialog,
   DialogContent,
@@ -270,8 +272,12 @@ const Admin = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="products">
+        <Tabs defaultValue="analytics">
           <TabsList className="mb-6">
+            <TabsTrigger value="analytics">
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Analytics
+            </TabsTrigger>
             <TabsTrigger value="products">
               <Package className="w-4 h-4 mr-2" />
               Produits ({products.length})
@@ -285,6 +291,11 @@ const Admin = () => {
               Signalements ({reports.length})
             </TabsTrigger>
           </TabsList>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics">
+            <DashboardAnalytics />
+          </TabsContent>
 
           {/* Products Tab */}
           <TabsContent value="products">
@@ -458,8 +469,10 @@ const Admin = () => {
                       <th className="text-left p-4 font-medium">Utilisateur</th>
                       <th className="text-left p-4 font-medium">Téléphone</th>
                       <th className="text-left p-4 font-medium">Ville</th>
+                      <th className="text-left p-4 font-medium">Vérifié</th>
                       <th className="text-left p-4 font-medium">Statut</th>
                       <th className="text-left p-4 font-medium">Inscrit le</th>
+                      <th className="text-left p-4 font-medium">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -486,12 +499,43 @@ const Admin = () => {
                         <td className="p-4">{profile.phone || '-'}</td>
                         <td className="p-4">{profile.city || '-'}</td>
                         <td className="p-4">
+                          {profile.is_verified ? (
+                            <VerifiedBadge size="md" />
+                          ) : (
+                            <span className="text-muted-foreground">Non</span>
+                          )}
+                        </td>
+                        <td className="p-4">
                           <Badge variant={profile.is_online ? 'default' : 'secondary'}>
                             {profile.is_online ? 'En ligne' : 'Hors ligne'}
                           </Badge>
                         </td>
                         <td className="p-4">
                           {new Date(profile.created_at).toLocaleDateString('fr-FR')}
+                        </td>
+                        <td className="p-4">
+                          <Button
+                            size="sm"
+                            variant={profile.is_verified ? 'destructive' : 'default'}
+                            onClick={async () => {
+                              const { error } = await supabase
+                                .from('profiles')
+                                .update({ is_verified: !profile.is_verified })
+                                .eq('id', profile.id);
+                              if (error) {
+                                toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+                              } else {
+                                toast({ 
+                                  title: 'Succès', 
+                                  description: profile.is_verified ? 'Vérification retirée' : 'Vendeur vérifié' 
+                                });
+                                fetchData();
+                              }
+                            }}
+                          >
+                            <BadgeCheck className="w-4 h-4 mr-1" />
+                            {profile.is_verified ? 'Retirer' : 'Vérifier'}
+                          </Button>
                         </td>
                       </tr>
                     ))}
