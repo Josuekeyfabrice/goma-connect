@@ -14,6 +14,7 @@ import { Footer } from '@/components/layout/Footer';
 import { OnlineIndicator } from '@/components/ui/OnlineIndicator';
 import { SellerReviews } from '@/components/reviews/SellerReviews';
 import { ReportDialog } from '@/components/reports/ReportDialog';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -425,7 +426,10 @@ const ProductDetail = () => {
                     )}
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-foreground">{seller?.full_name || 'Vendeur'}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-foreground">{seller?.full_name || 'Vendeur'}</h3>
+                      {seller?.is_verified && <VerifiedBadge size="sm" />}
+                    </div>
                     <p className="text-sm text-muted-foreground">
                       {seller?.is_online ? 'En ligne' : 'Hors ligne'}
                     </p>

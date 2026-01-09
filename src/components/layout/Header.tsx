@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotificationCounts } from '@/hooks/useNotificationCounts';
 import { supabase } from '@/integrations/supabase/client';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -86,6 +87,7 @@ export const Header = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden items-center gap-2 md:flex">
+            <ThemeToggle />
             {user ? (
               <>
                 <Button variant="ghost" size="icon" asChild>
@@ -196,6 +198,10 @@ export const Header = () => {
       {isMenuOpen && (
         <div className="border-t bg-background md:hidden animate-fade-in">
           <nav className="container mx-auto flex flex-col gap-2 p-4">
+            <div className="flex items-center justify-between py-2 px-3 rounded-md">
+              <span className="text-sm font-medium">Mode</span>
+              <ThemeToggle />
+            </div>
             {user ? (
               <>
                 <Button variant="ghost" className="justify-start" asChild>

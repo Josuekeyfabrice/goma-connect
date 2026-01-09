@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CompareProvider } from "@/components/compare/CompareContext";
 import { CompareBar } from "@/components/compare/CompareBar";
@@ -35,10 +36,11 @@ const OnlineStatusTracker = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <CompareProvider>
-        <Toaster />
-        <Sonner />
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+      <TooltipProvider>
+        <CompareProvider>
+          <Toaster />
+          <Sonner />
         <BrowserRouter>
           <AuthProvider>
             <OnlineStatusTracker />
@@ -64,8 +66,9 @@ const App = () => (
             <CompareBar />
           </AuthProvider>
         </BrowserRouter>
-      </CompareProvider>
-    </TooltipProvider>
+        </CompareProvider>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
