@@ -22,6 +22,7 @@ import EditProduct from "./pages/EditProduct";
 import Admin from "./pages/Admin";
 import SellerProfile from "./pages/SellerProfile";
 import Compare from "./pages/Compare";
+import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 import { useOnlineStatus } from "./hooks/useOnlineStatus";
 import { useNotifications } from "./hooks/useNotifications";
@@ -60,6 +61,7 @@ const App = () => (
               <Route path="/admin" element={<Admin />} />
               <Route path="/seller/:sellerId" element={<SellerProfile />} />
               <Route path="/compare" element={<Compare />} />
+              <Route path="/install" element={<Install />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
