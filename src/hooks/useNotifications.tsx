@@ -80,7 +80,8 @@ export const useNotifications = () => {
       )
       .subscribe();
 
-    // Subscribe to incoming calls
+    // Subscribe to incoming calls - browser notification only
+    // The IncomingCallDialog component handles the UI
     const callsChannel = supabase
       .channel('calls-notifications')
       .on(
@@ -104,13 +105,19 @@ export const useNotifications = () => {
 
             const callerName = caller?.full_name || 'Quelqu\'un';
             
-            showNotification(
-              'Appel entrant',
-              `${callerName} vous appelle`,
-              () => {
-                window.location.href = `/call/${call.caller_id}`;
-              }
-            );
+            // Only show browser notification for background tab
+            if ('Notification' in window && Notification.permission === 'granted' && document.hidden) {
+              const notification = new Notification('Appel entrant', {
+                body: `${callerName} vous appelle`,
+                icon: '/favicon.ico',
+                requireInteraction: true,
+              });
+
+              notification.onclick = () => {
+                window.focus();
+                notification.close();
+              };
+            }
           }
         }
       )

@@ -7,6 +7,7 @@ import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CompareProvider } from "@/components/compare/CompareContext";
 import { CompareBar } from "@/components/compare/CompareBar";
+import { IncomingCallDialog } from "@/components/calls/IncomingCallDialog";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Sell from "./pages/Sell";
@@ -35,6 +36,10 @@ const OnlineStatusTracker = () => {
   return null;
 };
 
+const CallHandler = () => {
+  return <IncomingCallDialog />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
@@ -45,6 +50,7 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <OnlineStatusTracker />
+            <CallHandler />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
