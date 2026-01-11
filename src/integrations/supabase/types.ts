@@ -37,6 +37,7 @@ export type Database = {
       }
       calls: {
         Row: {
+          call_type: string | null
           caller_id: string
           created_at: string
           ended_at: string | null
@@ -46,6 +47,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          call_type?: string | null
           caller_id: string
           created_at?: string
           ended_at?: string | null
@@ -55,6 +57,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          call_type?: string | null
           caller_id?: string
           created_at?: string
           ended_at?: string | null

@@ -68,6 +68,7 @@ const Call = () => {
             caller_id: user.id,
             receiver_id: userId,
             status: 'pending',
+            call_type: callType,
           })
           .select()
           .single();
