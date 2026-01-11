@@ -27,12 +27,14 @@ import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 import { useOnlineStatus } from "./hooks/useOnlineStatus";
 import { useNotifications } from "./hooks/useNotifications";
+import { usePushNotifications } from "./hooks/usePushNotifications";
 
 const queryClient = new QueryClient();
 
 const OnlineStatusTracker = () => {
   useOnlineStatus();
   useNotifications();
+  usePushNotifications();
   return null;
 };
 

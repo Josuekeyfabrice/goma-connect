@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Phone, PhoneOff, Video } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useRingtone } from '@/hooks/useRingtone';
 import type { Profile } from '@/types/database';
 
 interface IncomingCall {
@@ -18,6 +19,7 @@ interface IncomingCall {
 export const IncomingCallDialog = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { startRingtone, stopRingtone } = useRingtone();
   const [incomingCall, setIncomingCall] = useState<IncomingCall | null>(null);
   const [caller, setCaller] = useState<Profile | null>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -55,6 +57,7 @@ export const IncomingCallDialog = () => {
             }
             
             setIsOpen(true);
+            startRingtone();
           }
         }
       )
@@ -75,6 +78,7 @@ export const IncomingCallDialog = () => {
             setIsOpen(false);
             setIncomingCall(null);
             setCaller(null);
+            stopRingtone();
           }
         }
       )
@@ -89,6 +93,7 @@ export const IncomingCallDialog = () => {
     if (!incomingCall) return;
     
     console.log('Accepting call:', incomingCall.id);
+    stopRingtone();
     
     // Navigate to call page with callId
     navigate(`/call/${incomingCall.caller_id}?callId=${incomingCall.id}&type=${incomingCall.call_type || 'voice'}`);
@@ -101,6 +106,7 @@ export const IncomingCallDialog = () => {
     if (!incomingCall) return;
     
     console.log('Rejecting call:', incomingCall.id);
+    stopRingtone();
     
     await supabase
       .from('calls')
