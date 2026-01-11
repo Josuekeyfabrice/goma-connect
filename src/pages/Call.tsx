@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Phone, PhoneOff, Video, VideoOff, Mic, MicOff, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { WebRTCSignaling, getRTCConfiguration, type SignalingMessage } from '@/utils/webrtc-signaling';
 import type { Profile, Call as CallType } from '@/types/database';
 
 const Call = () => {
@@ -24,12 +25,162 @@ const Call = () => {
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoEnabled, setIsVideoEnabled] = useState(callType === 'video');
   const [callDuration, setCallDuration] = useState(0);
+  const [connectionState, setConnectionState] = useState<string>('new');
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
+  const signalingRef = useRef<WebRTCSignaling | null>(null);
+  const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
 
+  // Handle incoming signaling messages
+  const handleSignalingMessage = useCallback(async (message: SignalingMessage) => {
+    const pc = peerConnectionRef.current;
+    if (!pc) {
+      console.log('No peer connection yet, queuing message');
+      return;
+    }
+
+    console.log('Handling signaling message:', message.type);
+
+    try {
+      if (message.type === 'offer') {
+        console.log('Received offer, setting remote description');
+        await pc.setRemoteDescription(new RTCSessionDescription(message.payload as RTCSessionDescriptionInit));
+        
+        // Process pending candidates
+        for (const candidate of pendingCandidatesRef.current) {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate));
+        }
+        pendingCandidatesRef.current = [];
+        
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        await signalingRef.current?.sendAnswer(answer);
+        
+      } else if (message.type === 'answer') {
+        console.log('Received answer, setting remote description');
+        await pc.setRemoteDescription(new RTCSessionDescription(message.payload as RTCSessionDescriptionInit));
+        
+        // Process pending candidates
+        for (const candidate of pendingCandidatesRef.current) {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate));
+        }
+        pendingCandidatesRef.current = [];
+        
+      } else if (message.type === 'ice-candidate') {
+        console.log('Received ICE candidate');
+        const candidate = message.payload as RTCIceCandidateInit;
+        
+        if (pc.remoteDescription) {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate));
+        } else {
+          // Queue candidate until remote description is set
+          pendingCandidatesRef.current.push(candidate);
+        }
+      }
+    } catch (error) {
+      console.error('Error handling signaling message:', error);
+    }
+  }, []);
+
+  // Initialize WebRTC
+  const initWebRTC = useCallback(async (isInitiator: boolean, callId: string) => {
+    if (!user || !userId) return;
+
+    console.log('Initializing WebRTC, isInitiator:', isInitiator);
+
+    try {
+      // Get media stream
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: callType === 'video',
+      });
+
+      localStreamRef.current = stream;
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
+      }
+
+      // Create peer connection with improved configuration
+      const configuration = getRTCConfiguration();
+      const pc = new RTCPeerConnection(configuration);
+      peerConnectionRef.current = pc;
+
+      // Add tracks to peer connection
+      stream.getTracks().forEach(track => {
+        console.log('Adding track:', track.kind);
+        pc.addTrack(track, stream);
+      });
+
+      // Handle incoming tracks
+      pc.ontrack = (event) => {
+        console.log('Received remote track:', event.track.kind);
+        if (remoteVideoRef.current && event.streams[0]) {
+          remoteVideoRef.current.srcObject = event.streams[0];
+        }
+      };
+
+      // Handle ICE candidates
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          console.log('New ICE candidate:', event.candidate.type);
+          signalingRef.current?.sendIceCandidate(event.candidate);
+        }
+      };
+
+      // Monitor connection state
+      pc.onconnectionstatechange = () => {
+        console.log('Connection state:', pc.connectionState);
+        setConnectionState(pc.connectionState);
+        
+        if (pc.connectionState === 'connected') {
+          setCallStatus('connected');
+        } else if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
+          toast({
+            title: "Connexion perdue",
+            description: "La connexion avec l'autre utilisateur a été interrompue",
+            variant: "destructive",
+          });
+        }
+      };
+
+      pc.oniceconnectionstatechange = () => {
+        console.log('ICE connection state:', pc.iceConnectionState);
+      };
+
+      // Setup signaling
+      signalingRef.current = new WebRTCSignaling(
+        callId,
+        user.id,
+        userId,
+        handleSignalingMessage
+      );
+      await signalingRef.current.connect();
+
+      // If initiator, create and send offer
+      if (isInitiator) {
+        console.log('Creating offer...');
+        const offer = await pc.createOffer({
+          offerToReceiveAudio: true,
+          offerToReceiveVideo: callType === 'video',
+        });
+        await pc.setLocalDescription(offer);
+        await signalingRef.current.sendOffer(offer);
+      }
+
+    } catch (error) {
+      console.error('WebRTC error:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'accéder à la caméra/micro. Vérifiez les permissions.",
+        variant: "destructive",
+      });
+    }
+  }, [user, userId, callType, handleSignalingMessage, toast]);
+
+  // Initialize call
   useEffect(() => {
     if (!user || !userId) {
       navigate('/messages');
@@ -85,16 +236,17 @@ const Call = () => {
 
         setCall(callData as CallType);
         setCallStatus('ringing');
-        initWebRTC(true);
+        // Initialize WebRTC as initiator
+        initWebRTC(true, callData.id);
       }
     };
 
     init();
 
     return () => {
-      endCall();
+      cleanup();
     };
-  }, [user, userId, incomingCallId]);
+  }, [user, userId, incomingCallId, navigate, toast, initWebRTC, callType]);
 
   // Subscribe to call status changes
   useEffect(() => {
@@ -127,7 +279,7 @@ const Call = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [call?.id]);
+  }, [call?.id, navigate]);
 
   // Call duration timer
   useEffect(() => {
@@ -140,57 +292,27 @@ const Call = () => {
     return () => clearInterval(interval);
   }, [callStatus]);
 
-  const initWebRTC = async (isInitiator: boolean) => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: callType === 'video',
-      });
+  const cleanup = useCallback(() => {
+    // Stop local stream
+    localStreamRef.current?.getTracks().forEach(track => track.stop());
+    localStreamRef.current = null;
+    
+    // Close peer connection
+    peerConnectionRef.current?.close();
+    peerConnectionRef.current = null;
 
-      localStreamRef.current = stream;
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
-      }
+    // Disconnect signaling
+    signalingRef.current?.disconnect();
+    signalingRef.current = null;
 
-      const configuration = {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-        ],
-      };
-
-      peerConnectionRef.current = new RTCPeerConnection(configuration);
-
-      stream.getTracks().forEach(track => {
-        peerConnectionRef.current?.addTrack(track, stream);
-      });
-
-      peerConnectionRef.current.ontrack = (event) => {
-        if (remoteVideoRef.current) {
-          remoteVideoRef.current.srcObject = event.streams[0];
-        }
-      };
-
-      // For a real implementation, you'd use a signaling server
-      // This is a simplified version using Supabase Realtime
-      if (isInitiator) {
-        const offer = await peerConnectionRef.current.createOffer();
-        await peerConnectionRef.current.setLocalDescription(offer);
-        // Send offer via Supabase Realtime or another signaling mechanism
-      }
-    } catch (error) {
-      console.error('WebRTC error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible d'accéder à la caméra/micro",
-        variant: "destructive",
-      });
-    }
-  };
+    // Clear pending candidates
+    pendingCandidatesRef.current = [];
+  }, []);
 
   const acceptCall = async () => {
     if (!call) return;
 
+    // Update call status first
     await supabase
       .from('calls')
       .update({ 
@@ -200,7 +322,9 @@ const Call = () => {
       .eq('id', call.id);
 
     setCallStatus('connected');
-    initWebRTC(false);
+    
+    // Initialize WebRTC as receiver
+    initWebRTC(false, call.id);
   };
 
   const rejectCall = async () => {
@@ -211,15 +335,12 @@ const Call = () => {
       .update({ status: 'rejected' })
       .eq('id', call.id);
 
+    cleanup();
     navigate('/messages');
   };
 
   const endCall = async () => {
-    // Stop local stream
-    localStreamRef.current?.getTracks().forEach(track => track.stop());
-    
-    // Close peer connection
-    peerConnectionRef.current?.close();
+    cleanup();
 
     // Update call status
     if (call && callStatus !== 'ended') {
@@ -287,6 +408,9 @@ const Call = () => {
             muted
             className="absolute bottom-4 right-4 w-32 h-24 rounded-lg object-cover border-2 border-background"
           />
+          <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+            {connectionState}
+          </div>
         </div>
       )}
 
