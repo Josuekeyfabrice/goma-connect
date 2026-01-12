@@ -12,9 +12,10 @@ interface ProductCardProps {
   product: Product;
   onFavorite?: (productId: string) => void;
   isFavorite?: boolean;
+  distance?: string | null;
 }
 
-export const ProductCard = ({ product, onFavorite, isFavorite }: ProductCardProps) => {
+export const ProductCard = ({ product, onFavorite, isFavorite, distance }: ProductCardProps) => {
   const imageUrl = product.images?.[0] || '/placeholder.svg';
   const { addToCompare, removeFromCompare, isInCompare } = useCompare();
   const { toast } = useToast();
@@ -100,7 +101,7 @@ export const ProductCard = ({ product, onFavorite, isFavorite }: ProductCardProp
         <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
           <div className="flex items-center gap-1">
             <MapPin className="h-3.5 w-3.5" />
-            <span>{product.city}</span>
+            <span>{distance || product.city}</span>
           </div>
           <div className="flex items-center gap-1">
             <Eye className="h-3.5 w-3.5" />

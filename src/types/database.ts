@@ -30,6 +30,8 @@ export interface Product {
   is_approved: boolean;
   is_featured: boolean;
   views_count: number;
+  latitude: number | null;
+  longitude: number | null;
   created_at: string;
   updated_at: string;
   profiles?: Profile;
@@ -50,6 +52,7 @@ export interface Call {
   caller_id: string;
   receiver_id: string;
   status: 'pending' | 'accepted' | 'rejected' | 'ended' | 'missed';
+  call_type: 'voice' | 'video' | null;
   started_at: string | null;
   ended_at: string | null;
   created_at: string;
