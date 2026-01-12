@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { CATEGORIES, CITIES } from '@/types/database';
 import { Upload, X, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { GeolocationPicker } from '@/components/maps/GeolocationPicker';
 
 const Sell = () => {
   const { user, loading: authLoading } = useAuth();
@@ -30,7 +31,13 @@ const Sell = () => {
     avenue: '',
     address: '',
     phone: '',
+    latitude: null as number | null,
+    longitude: null as number | null,
   });
+
+  const handleLocationChange = useCallback((lat: number | null, lng: number | null) => {
+    setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }));
+  }, []);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -122,6 +129,8 @@ const Sell = () => {
         address: formData.address,
         phone: formData.phone,
         images: uploadedImages,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
       });
 
       if (error) throw error;
@@ -305,7 +314,14 @@ const Sell = () => {
               />
             </div>
 
-            <Button 
+            {/* Geolocation */}
+            <GeolocationPicker
+              latitude={formData.latitude}
+              longitude={formData.longitude}
+              onLocationChange={handleLocationChange}
+            />
+
+            <Button
               type="submit" 
               className="w-full gradient-primary text-primary-foreground"
               disabled={loading}

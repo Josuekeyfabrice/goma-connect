@@ -6,12 +6,14 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { ProductCard } from '@/components/products/ProductCard';
 import { LocationFilter } from '@/components/filters/LocationFilter';
+import { ProductMap } from '@/components/maps/ProductMap';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { Search as SearchIcon, Filter, X, SlidersHorizontal, ArrowUpDown, MapPin } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Search as SearchIcon, Filter, X, SlidersHorizontal, ArrowUpDown, MapPin, Grid, Map } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { calculateDistance, formatDistance, getSavedLocation } from '@/hooks/useGeolocation';
 
@@ -29,6 +31,7 @@ const Search = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const { user } = useAuth();
 
@@ -410,6 +413,26 @@ const Search = () => {
           )}
         </div>
 
+        {/* View mode toggle */}
+        <div className="flex justify-between items-center mb-4">
+          <p className="text-muted-foreground">
+            {filteredProducts.length} résultat(s) trouvé(s)
+            {searchRadius > 0 && ` dans un rayon de ${searchRadius} km`}
+          </p>
+          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'grid' | 'map')}>
+            <TabsList>
+              <TabsTrigger value="grid" className="gap-2">
+                <Grid className="h-4 w-4" />
+                <span className="hidden sm:inline">Grille</span>
+              </TabsTrigger>
+              <TabsTrigger value="map" className="gap-2">
+                <Map className="h-4 w-4" />
+                <span className="hidden sm:inline">Carte</span>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
         {/* Results */}
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -423,27 +446,23 @@ const Search = () => {
             <h2 className="text-xl font-semibold text-foreground mb-2">Aucun résultat</h2>
             <p className="text-muted-foreground">Essayez de modifier vos critères de recherche</p>
           </div>
+        ) : viewMode === 'map' ? (
+          <ProductMap products={filteredProducts} className="mb-8" />
         ) : (
-          <>
-            <p className="text-muted-foreground mb-4">
-              {filteredProducts.length} résultat(s) trouvé(s)
-              {searchRadius > 0 && ` dans un rayon de ${searchRadius} km`}
-            </p>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredProducts.map((product) => {
-                const distance = getProductDistance(product);
-                return (
-                  <ProductCard 
-                    key={product.id} 
-                    product={product}
-                    onFavorite={user ? handleFavorite : undefined}
-                    isFavorite={favorites.has(product.id)}
-                    distance={distance}
-                  />
-                );
-              })}
-            </div>
-          </>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {filteredProducts.map((product) => {
+              const distance = getProductDistance(product);
+              return (
+                <ProductCard 
+                  key={product.id} 
+                  product={product}
+                  onFavorite={user ? handleFavorite : undefined}
+                  isFavorite={favorites.has(product.id)}
+                  distance={distance}
+                />
+              );
+            })}
+          </div>
         )}
       </main>
 

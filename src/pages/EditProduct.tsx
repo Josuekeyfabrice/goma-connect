@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Camera, X, Loader2, ArrowLeft } from 'lucide-react';
+import { GeolocationPicker } from '@/components/maps/GeolocationPicker';
 
 const EditProduct = () => {
   const { id } = useParams<{ id: string }>();
@@ -29,7 +30,13 @@ const EditProduct = () => {
     avenue: '',
     address: '',
     phone: '',
+    latitude: null as number | null,
+    longitude: null as number | null,
   });
+
+  const handleLocationChange = useCallback((lat: number | null, lng: number | null) => {
+    setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }));
+  }, []);
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [newImages, setNewImages] = useState<File[]>([]);
   const [imagesToRemove, setImagesToRemove] = useState<string[]>([]);
@@ -78,6 +85,8 @@ const EditProduct = () => {
         avenue: data.avenue || '',
         address: data.address || '',
         phone: data.phone,
+        latitude: data.latitude || null,
+        longitude: data.longitude || null,
       });
       setExistingImages(data.images || []);
       setLoading(false);
@@ -163,6 +172,8 @@ const EditProduct = () => {
           address: formData.address,
           phone: formData.phone,
           images: finalImages,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
           updated_at: new Date().toISOString(),
         })
         .eq('id', id);
@@ -377,6 +388,13 @@ const EditProduct = () => {
               required
             />
           </div>
+
+          {/* Geolocation */}
+          <GeolocationPicker
+            latitude={formData.latitude}
+            longitude={formData.longitude}
+            onLocationChange={handleLocationChange}
+          />
 
           {/* Submit */}
           <Button type="submit" className="w-full" disabled={saving}>
