@@ -149,6 +149,8 @@ export type Database = {
           is_active: boolean | null
           is_approved: boolean | null
           is_featured: boolean | null
+          latitude: number | null
+          longitude: number | null
           name: string
           original_price: number | null
           phone: string
@@ -170,6 +172,8 @@ export type Database = {
           is_active?: boolean | null
           is_approved?: boolean | null
           is_featured?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
           name: string
           original_price?: number | null
           phone: string
@@ -191,6 +195,8 @@ export type Database = {
           is_active?: boolean | null
           is_approved?: boolean | null
           is_featured?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
           name?: string
           original_price?: number | null
           phone?: string
@@ -351,6 +357,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_distance: {
+        Args: { lat1: number; lat2: number; lon1: number; lon2: number }
+        Returns: number
+      }
+      earth: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

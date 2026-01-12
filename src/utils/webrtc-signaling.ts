@@ -118,14 +118,45 @@ export class WebRTCSignaling {
   }
 }
 
-// WebRTC configuration with multiple STUN/TURN servers for better connectivity
+// WebRTC configuration with STUN and free TURN servers for better connectivity
 export const getRTCConfiguration = (): RTCConfiguration => ({
   iceServers: [
+    // Google STUN servers
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
     { urls: 'stun:stun3.l.google.com:19302' },
     { urls: 'stun:stun4.l.google.com:19302' },
+    // Open Relay TURN servers (free public TURN servers)
+    {
+      urls: 'turn:openrelay.metered.ca:80',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
+    // Additional free TURN servers
+    {
+      urls: 'turn:relay.metered.ca:80',
+      username: 'free',
+      credential: 'free',
+    },
+    {
+      urls: 'turn:relay.metered.ca:443',
+      username: 'free',
+      credential: 'free',
+    },
   ],
   iceCandidatePoolSize: 10,
+  iceTransportPolicy: 'all', // Use both relay and direct connections
+  bundlePolicy: 'max-bundle', // Bundle all media into one connection
+  rtcpMuxPolicy: 'require', // Multiplex RTP and RTCP on same port
 });

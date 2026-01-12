@@ -1,17 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Product, CATEGORIES, CITIES } from '@/types/database';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { ProductCard } from '@/components/products/ProductCard';
+import { LocationFilter } from '@/components/filters/LocationFilter';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { Search as SearchIcon, Filter, X, SlidersHorizontal, ArrowUpDown } from 'lucide-react';
+import { Search as SearchIcon, Filter, X, SlidersHorizontal, ArrowUpDown, MapPin } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { calculateDistance, formatDistance, getSavedLocation } from '@/hooks/useGeolocation';
 
 const SORT_OPTIONS = [
   { value: 'recent', label: 'Plus récent' },
@@ -19,6 +21,7 @@ const SORT_OPTIONS = [
   { value: 'price_asc', label: 'Prix croissant' },
   { value: 'price_desc', label: 'Prix décroissant' },
   { value: 'popular', label: 'Plus populaire' },
+  { value: 'nearest', label: 'Plus proche' },
 ];
 
 const Search = () => {
@@ -37,11 +40,21 @@ const Search = () => {
     Number(searchParams.get('minPrice')) || 0,
     Number(searchParams.get('maxPrice')) || 10000000
   ]);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [searchRadius, setSearchRadius] = useState(Number(searchParams.get('radius')) || 0);
 
-  const fetchProducts = async () => {
+  // Load saved location on mount
+  useEffect(() => {
+    const saved = getSavedLocation();
+    if (saved) {
+      setUserLocation(saved);
+    }
+  }, []);
+
+  const fetchProducts = useCallback(async () => {
     setLoading(true);
     
-    // Determine sort order
+    // Determine sort order (skip for 'nearest' as we sort client-side)
     let orderColumn = 'created_at';
     let ascending = false;
     
@@ -60,6 +73,10 @@ const Search = () => {
         break;
       case 'popular':
         orderColumn = 'views_count';
+        ascending = false;
+        break;
+      case 'nearest':
+        orderColumn = 'created_at';
         ascending = false;
         break;
       default:
@@ -90,11 +107,12 @@ const Search = () => {
 
     if (error) {
       console.error('Error fetching products:', error);
+      setProducts([]);
     } else {
-      setProducts(data || []);
+      setProducts((data as Product[]) || []);
     }
     setLoading(false);
-  };
+  }, [query, category, city, sortBy, priceRange]);
 
   const fetchFavorites = async () => {
     if (!user) return;
@@ -129,16 +147,67 @@ const Search = () => {
     if (user) {
       fetchFavorites();
     }
-  }, [user]);
+  }, [user, fetchProducts]);
+
+  // Filter and sort products by distance
+  const filteredProducts = useMemo(() => {
+    let result = [...products];
+
+    // Filter by distance if location is set
+    if (userLocation && searchRadius > 0) {
+      result = result.filter(product => {
+        if (!product.latitude || !product.longitude) return false;
+        const distance = calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          product.latitude,
+          product.longitude
+        );
+        return distance <= searchRadius;
+      });
+    }
+
+    // Sort by distance if that option is selected
+    if (sortBy === 'nearest' && userLocation) {
+      result.sort((a, b) => {
+        if (!a.latitude || !a.longitude) return 1;
+        if (!b.latitude || !b.longitude) return -1;
+        const distA = calculateDistance(userLocation.latitude, userLocation.longitude, a.latitude, a.longitude);
+        const distB = calculateDistance(userLocation.latitude, userLocation.longitude, b.latitude, b.longitude);
+        return distA - distB;
+      });
+    }
+
+    return result;
+  }, [products, userLocation, searchRadius, sortBy]);
+
+  // Get distance for a product
+  const getProductDistance = useCallback((product: Product): string | null => {
+    if (!userLocation || !product.latitude || !product.longitude) return null;
+    const distance = calculateDistance(
+      userLocation.latitude,
+      userLocation.longitude,
+      product.latitude,
+      product.longitude
+    );
+    return formatDistance(distance);
+  }, [userLocation]);
 
   // Count active filters
   const activeFiltersCount = [
     category,
     city,
     priceRange[0] > 0 || priceRange[1] < 10000000,
+    searchRadius > 0,
   ].filter(Boolean).length;
 
-  const handleSearch = () => {
+  // Handle location change from LocationFilter
+  const handleLocationChange = useCallback((location: { latitude: number; longitude: number } | null, radius: number) => {
+    setUserLocation(location);
+    setSearchRadius(radius);
+  }, []);
+
+  const handleSearch = useCallback(() => {
     const params = new URLSearchParams();
     if (query) params.set('q', query);
     if (category) params.set('category', category);
@@ -146,11 +215,12 @@ const Search = () => {
     if (sortBy !== 'recent') params.set('sort', sortBy);
     if (priceRange[0] > 0) params.set('minPrice', priceRange[0].toString());
     if (priceRange[1] < 10000000) params.set('maxPrice', priceRange[1].toString());
+    if (searchRadius > 0) params.set('radius', searchRadius.toString());
     setSearchParams(params);
     fetchProducts();
-  };
+  }, [query, category, city, sortBy, priceRange, searchRadius, setSearchParams, fetchProducts]);
 
-  const removeFilter = (filterType: 'category' | 'city' | 'price') => {
+  const removeFilter = useCallback((filterType: 'category' | 'city' | 'price' | 'location') => {
     switch (filterType) {
       case 'category':
         setCategory('');
@@ -161,27 +231,33 @@ const Search = () => {
       case 'price':
         setPriceRange([0, 10000000]);
         break;
+      case 'location':
+        setUserLocation(null);
+        setSearchRadius(0);
+        break;
     }
     setTimeout(() => handleSearch(), 0);
-  };
+  }, [handleSearch]);
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setQuery('');
     setCategory('');
     setCity('');
     setSortBy('recent');
     setPriceRange([0, 10000000]);
+    setUserLocation(null);
+    setSearchRadius(0);
     setSearchParams({});
     setTimeout(() => fetchProducts(), 0);
-  };
+  }, [setSearchParams, fetchProducts]);
 
-  const formatPrice = (price: number) => {
+  const formatPrice = useCallback((price: number) => {
     return new Intl.NumberFormat('fr-CD', {
       style: 'currency',
       currency: 'CDF',
       minimumFractionDigits: 0,
     }).format(price);
-  };
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -215,6 +291,10 @@ const Search = () => {
                 ))}
               </SelectContent>
             </Select>
+            <LocationFilter 
+              onLocationChange={handleLocationChange}
+              currentRadius={searchRadius}
+            />
             <Button onClick={() => setShowFilters(!showFilters)} variant="outline" className="relative">
               <SlidersHorizontal className="w-5 h-5 mr-2" />
               Filtres
@@ -230,7 +310,7 @@ const Search = () => {
           </div>
 
           {/* Active filters */}
-          {(category || city || priceRange[0] > 0 || priceRange[1] < 10000000) && (
+          {(category || city || priceRange[0] > 0 || priceRange[1] < 10000000 || searchRadius > 0) && (
             <div className="flex flex-wrap gap-2 mb-4">
               {category && (
                 <Badge variant="secondary" className="gap-1">
@@ -248,6 +328,13 @@ const Search = () => {
                 <Badge variant="secondary" className="gap-1">
                   {formatPrice(priceRange[0])} - {formatPrice(priceRange[1])}
                   <X className="w-3 h-3 cursor-pointer" onClick={() => removeFilter('price')} />
+                </Badge>
+              )}
+              {searchRadius > 0 && (
+                <Badge variant="secondary" className="gap-1">
+                  <MapPin className="w-3 h-3" />
+                  {searchRadius} km
+                  <X className="w-3 h-3 cursor-pointer" onClick={() => removeFilter('location')} />
                 </Badge>
               )}
               <Button variant="ghost" size="sm" onClick={clearFilters} className="h-6 px-2 text-xs">
@@ -330,7 +417,7 @@ const Search = () => {
               <div key={i} className="bg-muted animate-pulse rounded-lg h-64" />
             ))}
           </div>
-        ) : products.length === 0 ? (
+        ) : filteredProducts.length === 0 ? (
           <div className="text-center py-16">
             <SearchIcon className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-foreground mb-2">Aucun résultat</h2>
@@ -338,16 +425,23 @@ const Search = () => {
           </div>
         ) : (
           <>
-            <p className="text-muted-foreground mb-4">{products.length} résultat(s) trouvé(s)</p>
+            <p className="text-muted-foreground mb-4">
+              {filteredProducts.length} résultat(s) trouvé(s)
+              {searchRadius > 0 && ` dans un rayon de ${searchRadius} km`}
+            </p>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {products.map((product) => (
-                <ProductCard 
-                  key={product.id} 
-                  product={product}
-                  onFavorite={user ? handleFavorite : undefined}
-                  isFavorite={favorites.has(product.id)}
-                />
-              ))}
+              {filteredProducts.map((product) => {
+                const distance = getProductDistance(product);
+                return (
+                  <ProductCard 
+                    key={product.id} 
+                    product={product}
+                    onFavorite={user ? handleFavorite : undefined}
+                    isFavorite={favorites.has(product.id)}
+                    distance={distance}
+                  />
+                );
+              })}
             </div>
           </>
         )}
