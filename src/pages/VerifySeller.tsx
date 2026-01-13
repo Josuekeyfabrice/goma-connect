@@ -83,7 +83,7 @@ const VerifySeller = () => {
 
   const handleWhatsAppConfirm = () => {
     const message = `Bonjour GOMACASCADE, je souhaite activer le forfait ${selectedPlan.name} (${selectedPlan.price}$) pour mon compte vendeur.`;
-    window.open(`https://wa.me/243816487531?text=${encodeURIComponent(message)}`, '_blank');
+    window.open(`https://wa.me/243893645600?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const handlePawaPay = () => {
