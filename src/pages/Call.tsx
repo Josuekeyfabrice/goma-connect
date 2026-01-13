@@ -8,6 +8,7 @@ import { Phone, PhoneOff, Video, VideoOff, Mic, MicOff, Loader2, RefreshCw } fro
 import { useToast } from '@/hooks/use-toast';
 import { WebRTCSignaling, getRTCConfiguration, type SignalingMessage } from '@/utils/webrtc-signaling';
 import { useConnectionQuality } from '@/hooks/useConnectionQuality';
+import { useRingtone } from '@/hooks/useRingtone';
 import { SignalStrengthIndicator } from '@/components/calls/SignalStrengthIndicator';
 import type { Profile, Call as CallType } from '@/types/database';
 
@@ -23,6 +24,7 @@ const Call = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { stopRingtone } = useRingtone();
 
   const [partner, setPartner] = useState<Profile | null>(null);
   const [callStatus, setCallStatus] = useState<'connecting' | 'ringing' | 'connected' | 'ended' | 'reconnecting'>('connecting');
@@ -470,6 +472,10 @@ const Call = () => {
   const acceptCall = async () => {
     if (!call) return;
 
+    // Stop ringtone if it's still playing
+    stopRingtone();
+    setTimeout(() => stopRingtone(), 100);
+
     await supabase
       .from('calls')
       .update({ 
@@ -485,6 +491,10 @@ const Call = () => {
   const rejectCall = async () => {
     if (!call) return;
 
+    // Stop ringtone if it's still playing
+    stopRingtone();
+    setTimeout(() => stopRingtone(), 100);
+
     await supabase
       .from('calls')
       .update({ status: 'rejected' })
@@ -495,6 +505,10 @@ const Call = () => {
   };
 
   const endCall = async () => {
+    // Stop ringtone if it's still playing
+    stopRingtone();
+    setTimeout(() => stopRingtone(), 100);
+    
     cleanup();
 
     if (call && callStatus !== 'ended') {

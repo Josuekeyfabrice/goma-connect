@@ -93,7 +93,24 @@ export const IncomingCallDialog = () => {
     if (!incomingCall) return;
     
     console.log('Accepting call:', incomingCall.id);
+    
+    // Stop ringtone immediately and ensure it's fully stopped
     stopRingtone();
+    
+    // Double-check that ringtone is stopped after a short delay
+    setTimeout(() => {
+      stopRingtone();
+    }, 100);
+    
+    // Update call status in database
+    try {
+      await supabase
+        .from('calls')
+        .update({ status: 'accepted' })
+        .eq('id', incomingCall.id);
+    } catch (error) {
+      console.error('Error updating call status:', error);
+    }
     
     // Navigate to call page with callId
     navigate(`/call/${incomingCall.caller_id}?callId=${incomingCall.id}&type=${incomingCall.call_type || 'voice'}`);
@@ -106,12 +123,23 @@ export const IncomingCallDialog = () => {
     if (!incomingCall) return;
     
     console.log('Rejecting call:', incomingCall.id);
+    
+    // Stop ringtone immediately
     stopRingtone();
     
-    await supabase
-      .from('calls')
-      .update({ status: 'rejected' })
-      .eq('id', incomingCall.id);
+    // Double-check that ringtone is stopped
+    setTimeout(() => {
+      stopRingtone();
+    }, 100);
+    
+    try {
+      await supabase
+        .from('calls')
+        .update({ status: 'rejected' })
+        .eq('id', incomingCall.id);
+    } catch (error) {
+      console.error('Error rejecting call:', error);
+    }
 
     setIsOpen(false);
     setIncomingCall(null);

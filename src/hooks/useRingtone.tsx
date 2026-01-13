@@ -37,6 +37,7 @@ export const useRingtone = () => {
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
   const isPlayingRef = useRef(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
 
   const startRingtone = useCallback(async () => {
     if (isPlayingRef.current) return;
@@ -63,6 +64,7 @@ export const useRingtone = () => {
         
         source.start();
         sourceRef.current = source;
+        gainNodeRef.current = gainNode;
       };
       
       isPlayingRef.current = true;
@@ -96,9 +98,32 @@ export const useRingtone = () => {
       }
       sourceRef.current = null;
     }
+
+    if (gainNodeRef.current) {
+      gainNodeRef.current.gain.value = 0;
+      gainNodeRef.current = null;
+    }
     
     if (audioContextRef.current) {
-      audioContextRef.current.close();
+      try {
+        // Suspend the audio context first, then close it
+        if (audioContextRef.current.state !== 'closed') {
+          audioContextRef.current.suspend().then(() => {
+            if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+              audioContextRef.current.close().catch(() => {
+                // Context might already be closed
+              });
+            }
+          }).catch(() => {
+            // If suspend fails, try to close directly
+            if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+              audioContextRef.current.close().catch(() => {});
+            }
+          });
+        }
+      } catch (e) {
+        // Context might already be closed
+      }
       audioContextRef.current = null;
     }
   }, []);
