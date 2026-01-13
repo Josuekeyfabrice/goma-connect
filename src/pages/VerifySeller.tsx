@@ -1,14 +1,38 @@
+import { useState } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, ShieldCheck, TrendingUp, Zap, Smartphone, CreditCard } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { 
+  CheckCircle2, 
+  ShieldCheck, 
+  TrendingUp, 
+  Zap, 
+  Smartphone, 
+  MessageSquare,
+  Copy,
+  Check
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useToast } from '@/hooks/use-toast';
 
 const VerifySeller = () => {
+  const { toast } = useToast();
+  const [selectedPlan, setSelectedPlan] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [copiedNumber, setCopiedNumber] = useState<string | null>(null);
+
   const plans = [
     {
+      id: 'monthly',
       name: "Mensuel",
       price: "5",
       duration: "mois",
@@ -17,6 +41,7 @@ const VerifySeller = () => {
       recommended: false
     },
     {
+      id: 'quarterly',
       name: "Trimestriel",
       price: "12",
       duration: "3 mois",
@@ -25,6 +50,7 @@ const VerifySeller = () => {
       recommended: true
     },
     {
+      id: 'yearly',
       name: "Annuel",
       price: "40",
       duration: "an",
@@ -33,6 +59,32 @@ const VerifySeller = () => {
       recommended: false
     }
   ];
+
+  const paymentMethods = [
+    { name: 'M-Pesa', color: 'bg-[#E61C24]', textColor: 'text-white', number: '+243 812 345 678' },
+    { name: 'Airtel Money', color: 'bg-[#FF0000]', textColor: 'text-white', number: '+243 991 234 567' },
+    { name: 'Orange Money', color: 'bg-[#FF7900]', textColor: 'text-white', number: '+243 891 234 567' },
+  ];
+
+  const handleSelectPlan = (plan: any) => {
+    setSelectedPlan(plan);
+    setIsModalOpen(true);
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedNumber(text);
+    toast({
+      title: "Copié !",
+      description: "Le numéro a été copié dans votre presse-papier.",
+    });
+    setTimeout(() => setCopiedNumber(null), 2000);
+  };
+
+  const handleWhatsAppConfirm = () => {
+    const message = `Bonjour GOMACASCADE, je souhaite activer le forfait ${selectedPlan.name} (${selectedPlan.price}$) pour mon compte vendeur.`;
+    window.open(`https://wa.me/243812345678?text=${encodeURIComponent(message)}`, '_blank');
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -97,10 +149,10 @@ const VerifySeller = () => {
                 >
                   {plan.recommended && (
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
-                      <Badge className="bg-primary text-primary-foreground px-4 py-1">Recommandé</Badge>
+                      <Badge className="bg-primary text-primary-foreground px-4 py-1 shadow-lg">Recommandé</Badge>
                     </div>
                   )}
-                  <Card className={`h-full flex flex-col ${plan.recommended ? 'border-primary shadow-lg ring-1 ring-primary' : ''}`}>
+                  <Card className={`h-full flex flex-col transition-all ${plan.recommended ? 'border-primary shadow-xl ring-1 ring-primary' : 'hover:shadow-lg'}`}>
                     <CardHeader>
                       <CardTitle className="text-2xl">{plan.name}</CardTitle>
                       <CardDescription>{plan.description}</CardDescription>
@@ -118,7 +170,11 @@ const VerifySeller = () => {
                           </li>
                         ))}
                       </ul>
-                      <Button className={`w-full ${plan.recommended ? 'gradient-primary' : ''}`} variant={plan.recommended ? 'default' : 'outline'}>
+                      <Button 
+                        onClick={() => handleSelectPlan(plan)}
+                        className={`w-full h-12 text-lg font-bold ${plan.recommended ? 'gradient-primary' : ''}`} 
+                        variant={plan.recommended ? 'default' : 'outline'}
+                      >
                         Choisir ce forfait
                       </Button>
                     </CardContent>
@@ -129,31 +185,73 @@ const VerifySeller = () => {
           </div>
         </section>
 
-        {/* Payment Methods */}
+        {/* Payment Modal */}
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-2xl">Finaliser votre paiement</DialogTitle>
+              <DialogDescription>
+                Forfait sélectionné : <span className="font-bold text-primary">{selectedPlan?.name} ({selectedPlan?.price}$)</span>
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-6 py-4">
+              <p className="text-sm text-muted-foreground">
+                Veuillez effectuer le transfert du montant exact vers l'un des numéros ci-dessous :
+              </p>
+              
+              <div className="space-y-3">
+                {paymentMethods.map((method) => (
+                  <div key={method.name} className="flex items-center justify-between p-3 rounded-xl border bg-card hover:bg-accent transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-lg ${method.color} flex items-center justify-center text-[10px] font-bold ${method.textColor} leading-tight text-center px-1`}>
+                        {method.name}
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground">{method.name}</p>
+                        <p className="font-mono font-bold">{method.number}</p>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => copyToClipboard(method.number)}
+                    >
+                      {copiedNumber === method.number ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="bg-primary/5 p-4 rounded-xl border border-primary/20 space-y-3">
+                <p className="text-xs font-medium flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-primary" />
+                  Une fois le transfert effectué :
+                </p>
+                <Button 
+                  onClick={handleWhatsAppConfirm}
+                  className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white gap-2"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  Confirmer sur WhatsApp
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Payment Methods Footer */}
         <section className="py-16 container mx-auto px-4 text-center">
           <h2 className="text-2xl font-bold mb-8">Modes de paiement acceptés à Goma</h2>
-          <div className="flex flex-wrap justify-center gap-8 opacity-70">
-            <div className="flex items-center gap-2">
-              <Smartphone className="w-6 h-6" />
-              <span className="font-semibold">M-Pesa</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Smartphone className="w-6 h-6" />
-              <span className="font-semibold">Airtel Money</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Smartphone className="w-6 h-6" />
-              <span className="font-semibold">Orange Money</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CreditCard className="w-6 h-6" />
-              <span className="font-semibold">Cartes Bancaires</span>
-            </div>
+          <div className="flex flex-wrap justify-center gap-8">
+            {paymentMethods.map((method) => (
+              <div key={method.name} className="flex flex-col items-center gap-2">
+                <div className={`w-16 h-16 rounded-2xl ${method.color} flex items-center justify-center text-xs font-bold ${method.textColor} shadow-lg`}>
+                  {method.name}
+                </div>
+                <span className="text-sm font-medium">{method.name}</span>
+              </div>
+            ))}
           </div>
-          <p className="mt-8 text-muted-foreground max-w-xl mx-auto">
-            Après le choix de votre forfait, vous recevrez les instructions pour le transfert Mobile Money. 
-            Votre badge sera activé dans les 2 heures suivant la confirmation.
-          </p>
         </section>
       </main>
       <Footer />
