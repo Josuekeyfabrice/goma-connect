@@ -36,6 +36,7 @@ const VerifySeller = lazy(() => import("./pages/VerifySeller"));
 const Transactions = lazy(() => import("./pages/Transactions"));
 const ProximityMap = lazy(() => import("./pages/ProximityMap"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const SellerDashboard = lazy(() => import("./pages/SellerDashboard"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -84,6 +85,7 @@ const App = () => (
                   <Route path="/edit-product/:id" element={<EditProduct />} />
                   <Route path="/transactions" element={<Transactions />} />
                   <Route path="/proximity-map" element={<ProximityMap />} />
+                  <Route path="/seller-dashboard" element={<SellerDashboard />} />
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/seller/:sellerId" element={<SellerProfile />} />
                   <Route path="/compare" element={<Compare />} />
