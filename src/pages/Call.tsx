@@ -85,6 +85,11 @@ const Call = () => {
         }
         pendingCandidatesRef.current = [];
         
+        if (pc.signalingState === 'closed') {
+          console.error('Cannot create answer: PeerConnection is closed');
+          return;
+        }
+        
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
         await signalingRef.current?.sendAnswer(answer);
@@ -305,6 +310,11 @@ const Call = () => {
         
         await new Promise(resolve => setTimeout(resolve, 500));
         
+        if (pc.signalingState === 'closed') {
+          console.error('Cannot create offer: PeerConnection is closed');
+          return;
+        }
+
         const offer = await pc.createOffer({
           offerToReceiveAudio: true,
           offerToReceiveVideo: callType === 'video',
