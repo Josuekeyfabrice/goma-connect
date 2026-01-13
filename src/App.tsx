@@ -9,6 +9,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { CompareProvider } from "@/components/compare/CompareContext";
 import { CompareBar } from "@/components/compare/CompareBar";
 import { IncomingCallDialog } from "@/components/calls/IncomingCallDialog";
+import { OfflineIndicator } from "@/components/layout/OfflineIndicator";
 import { useOnlineStatus } from "./hooks/useOnlineStatus";
 import { useNotifications } from "./hooks/useNotifications";
 import { usePushNotifications } from "./hooks/usePushNotifications";
@@ -32,6 +33,9 @@ const Compare = lazy(() => import("./pages/Compare"));
 const Install = lazy(() => import("./pages/Install"));
 const LiveTV = lazy(() => import("./pages/LiveTV"));
 const VerifySeller = lazy(() => import("./pages/VerifySeller"));
+const Transactions = lazy(() => import("./pages/Transactions"));
+const ProximityMap = lazy(() => import("./pages/ProximityMap"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -56,6 +60,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <AuthProvider>
+              <OfflineIndicator />
               <OnlineStatusTracker />
               <CallHandler />
               <Suspense fallback={
@@ -66,6 +71,7 @@ const App = () => (
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/auth" element={<Auth />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/sell" element={<Sell />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/messages" element={<Messages />} />
@@ -76,6 +82,8 @@ const App = () => (
                   <Route path="/favorites" element={<Favorites />} />
                   <Route path="/search" element={<Search />} />
                   <Route path="/edit-product/:id" element={<EditProduct />} />
+                  <Route path="/transactions" element={<Transactions />} />
+                  <Route path="/proximity-map" element={<ProximityMap />} />
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/seller/:sellerId" element={<SellerProfile />} />
                   <Route path="/compare" element={<Compare />} />

@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { ForgotPassword } from '@/components/auth/ForgotPassword';
 
 const loginSchema = z.object({
   email: z.string().email('Email invalide'),
@@ -28,6 +29,7 @@ const signupSchema = z.object({
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const [isSignUp, setIsSignUp] = useState(searchParams.get('mode') === 'signup');
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -151,6 +153,16 @@ const Auth = () => {
     }
   };
 
+  if (isForgotPassword) {
+    return (
+      <div className="min-h-screen flex items-center justify-center gradient-hero p-4">
+        <div className="w-full max-w-md">
+          <ForgotPassword onBack={() => setIsForgotPassword(false)} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center gradient-hero p-4">
       <div className="w-full max-w-md">
@@ -268,6 +280,16 @@ const Auth = () => {
                 {errors.password && (
                   <p className="text-sm text-destructive">{errors.password}</p>
                 )}
+                {!isSignUp && (
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="p-0 h-auto text-xs text-primary"
+                    onClick={() => setIsForgotPassword(true)}
+                  >
+                    Mot de passe oublié ?
+                  </Button>
+                )}
               </div>
 
               {isSignUp && (
@@ -300,7 +322,7 @@ const Auth = () => {
               </Button>
             </form>
 
-            <div className="mt-6 text-center text-sm">
+            <div className="mt-6 text-center text-sm space-y-3">
               {isSignUp ? (
                 <p className="text-muted-foreground">
                   Vous avez déjà un compte ?{' '}
