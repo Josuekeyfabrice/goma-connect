@@ -15,6 +15,7 @@ import { OnlineIndicator } from '@/components/ui/OnlineIndicator';
 import { SellerReviews } from '@/components/reviews/SellerReviews';
 import { ReportDialog } from '@/components/reports/ReportDialog';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
+import ProductLocationMap from '@/components/maps/ProductLocationMap';
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -479,6 +480,20 @@ const ProductDetail = () => {
               <div className="flex justify-end">
                 <ReportDialog productId={product.id} />
               </div>
+            )}
+
+            {/* Product Location Map */}
+            {product.latitude && product.longitude && (
+              <>
+                <Separator />
+                <ProductLocationMap
+                  latitude={product.latitude}
+                  longitude={product.longitude}
+                  productName={product.name}
+                  city={product.city}
+                  address={product.address || product.avenue}
+                />
+              </>
             )}
 
             {/* Seller Reviews */}
