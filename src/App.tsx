@@ -10,6 +10,7 @@ import { CompareProvider } from "@/components/compare/CompareContext";
 import { CompareBar } from "@/components/compare/CompareBar";
 import { IncomingCallDialog } from "@/components/calls/IncomingCallDialog";
 import { OfflineIndicator } from "@/components/layout/OfflineIndicator";
+import { PerformanceMonitor } from "@/components/common/PerformanceMonitor";
 import { useOnlineStatus } from "./hooks/useOnlineStatus";
 import { useNotifications } from "./hooks/useNotifications";
 import { usePushNotifications } from "./hooks/usePushNotifications";
@@ -63,6 +64,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <AuthProvider>
+              <PerformanceMonitor />
               <OfflineIndicator />
               <OnlineStatusTracker />
               <CallHandler />
