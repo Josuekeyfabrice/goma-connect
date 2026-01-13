@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Search, Heart, MessageCircle, User, Plus, LogOut, Phone, Shield, Download } from 'lucide-react';
+import { Menu, X, Search, Heart, MessageCircle, User, Plus, LogOut, Phone, Shield, Download, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -166,6 +166,12 @@ export const Header = () => {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
+                      <Link to="/verify-seller" className="cursor-pointer text-primary font-semibold">
+                        <ShieldCheck className="mr-2 h-4 w-4" />
+                        Devenir Vérifié
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
                       <Link to="/my-products" className="cursor-pointer">
                         Mes Annonces
                       </Link>
@@ -267,6 +273,12 @@ export const Header = () => {
                   <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
                     <User className="mr-2 h-5 w-5" />
                     Mon Profil
+                  </Link>
+                </Button>
+                <Button variant="ghost" className="justify-start text-primary font-semibold" asChild>
+                  <Link to="/verify-seller" onClick={() => setIsMenuOpen(false)}>
+                    <ShieldCheck className="mr-2 h-5 w-5" />
+                    Devenir Vérifié
                   </Link>
                 </Button>
                 <Button variant="ghost" className="justify-start" asChild>
