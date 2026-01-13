@@ -8,11 +8,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { EscrowStatus } from '@/components/profile/EscrowStatus';
+import { IdentityVerification } from '@/components/profile/IdentityVerification';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { CITIES } from '@/types/database';
-import { Camera, Loader2, Save } from 'lucide-react';
+import { Camera, Loader2, Save, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Profile = () => {
@@ -228,6 +230,14 @@ const Profile = () => {
               </form>
             </CardContent>
           </Card>
+
+          <div className="mt-12">
+            <EscrowStatus userId={user.id} />
+          </div>
+
+          <div className="mt-8">
+            <IdentityVerification />
+          </div>
         </div>
       </main>
       <Footer />

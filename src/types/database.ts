@@ -65,6 +65,19 @@ export interface Favorite {
   created_at: string;
 }
 
+export interface Transaction {
+  id: string;
+  buyer_id: string;
+  seller_id: string;
+  product_id: string;
+  amount: number;
+  status: 'pending' | 'paid' | 'delivered' | 'completed' | 'cancelled' | 'disputed';
+  payment_method: string | null;
+  escrow_status: 'waiting' | 'held' | 'released' | 'refunded';
+  created_at: string;
+  updated_at: string;
+}
+
 export const CATEGORIES = [
   'Électronique',
   'Véhicules',
