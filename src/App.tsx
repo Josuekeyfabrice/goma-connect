@@ -37,6 +37,8 @@ const Transactions = lazy(() => import("./pages/Transactions"));
 const ProximityMap = lazy(() => import("./pages/ProximityMap"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const SellerDashboard = lazy(() => import("./pages/SellerDashboard"));
+const LiveShopping = lazy(() => import("./pages/LiveShopping"));
+const SellerPublicProfile = lazy(() => import("./pages/SellerPublicProfile"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -86,6 +88,8 @@ const App = () => (
                   <Route path="/transactions" element={<Transactions />} />
                   <Route path="/proximity-map" element={<ProximityMap />} />
                   <Route path="/seller-dashboard" element={<SellerDashboard />} />
+                  <Route path="/live-shopping" element={<LiveShopping />} />
+                  <Route path="/seller-public/:sellerId" element={<SellerPublicProfile />} />
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/seller/:sellerId" element={<SellerProfile />} />
                   <Route path="/compare" element={<Compare />} />
