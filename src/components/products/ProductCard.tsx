@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Heart, MapPin, Eye, GitCompare } from 'lucide-react';
+import { Heart, MapPin, Eye, GitCompare, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Product } from '@/types/database';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { formatPrice } from '@/lib/utils';
 import { useCompare } from '@/components/compare/CompareContext';
 import { useToast } from '@/hooks/use-toast';
@@ -90,11 +91,16 @@ export const ProductCard = ({ product, onFavorite, isFavorite, distance }: Produ
         </div>
       </Link>
       <CardContent className="p-4">
-        <Link to={`/product/${product.id}`}>
-          <h3 className="font-semibold text-foreground line-clamp-1 hover:text-primary transition-colors">
-            {product.name}
-          </h3>
-        </Link>
+        <div className="flex items-center justify-between gap-2">
+          <Link to={`/product/${product.id}`} className="flex-1">
+            <h3 className="font-semibold text-foreground line-clamp-1 hover:text-primary transition-colors">
+              {product.name}
+            </h3>
+          </Link>
+          {product.profiles?.is_verified && (
+            <VerifiedBadge size="sm" />
+          )}
+        </div>
         <div className="mt-2 flex items-baseline gap-2">
           <span className="text-xl font-bold text-primary">
             {formatPrice(product.price)}
@@ -108,12 +114,14 @@ export const ProductCard = ({ product, onFavorite, isFavorite, distance }: Produ
         <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
           <div className="flex items-center gap-1">
             <MapPin className="h-3.5 w-3.5" />
-            <span>{distance || product.city}</span>
+            <span className="line-clamp-1">{distance || product.city}</span>
           </div>
-          <div className="flex items-center gap-1">
-            <Eye className="h-3.5 w-3.5" />
-            <span>{product.views_count || 0}</span>
-          </div>
+          {product.profiles?.full_name && (
+            <div className="flex items-center gap-1">
+              <User className="h-3.5 w-3.5" />
+              <span className="line-clamp-1">{product.profiles.full_name}</span>
+            </div>
+          )}
         </div>
         </CardContent>
       </Card>
