@@ -22,6 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { useToast } from '@/hooks/use-toast';
 
 const VerifySeller = () => {
@@ -94,9 +95,10 @@ const VerifySeller = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
-      <main className="flex-1">
+    <TooltipProvider>
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="flex-1">
         {/* Hero Section */}
         <section className="py-16 bg-primary/5 border-b">
           <div className="container mx-auto px-4 text-center">
@@ -279,9 +281,10 @@ const VerifySeller = () => {
             ))}
           </div>
         </section>
-      </main>
-      <Footer />
-    </div>
+        </main>
+        <Footer />
+      </div>
+    </TooltipProvider>
   );
 };
 
