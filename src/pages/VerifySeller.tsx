@@ -61,9 +61,9 @@ const VerifySeller = () => {
   ];
 
   const paymentMethods = [
-    { name: 'M-Pesa', color: 'bg-[#E61C24]', textColor: 'text-white', number: '+243 812 345 678' },
-    { name: 'Airtel Money', color: 'bg-[#FF0000]', textColor: 'text-white', number: '+243 991 234 567' },
-    { name: 'Orange Money', color: 'bg-[#FF7900]', textColor: 'text-white', number: '+243 891 234 567' },
+    { name: 'M-Pesa', color: 'bg-[#E61C24]', textColor: 'text-white', number: '+243 816 487 531' },
+    { name: 'Airtel Money', color: 'bg-[#FF0000]', textColor: 'text-white', number: '+243 991 291 980' },
+    { name: 'Orange Money', color: 'bg-[#FF7900]', textColor: 'text-white', number: '+243 893 645 600' },
   ];
 
   const handleSelectPlan = (plan: any) => {
@@ -83,7 +83,14 @@ const VerifySeller = () => {
 
   const handleWhatsAppConfirm = () => {
     const message = `Bonjour GOMACASCADE, je souhaite activer le forfait ${selectedPlan.name} (${selectedPlan.price}$) pour mon compte vendeur.`;
-    window.open(`https://wa.me/243812345678?text=${encodeURIComponent(message)}`, '_blank');
+    window.open(`https://wa.me/243816487531?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
+  const handlePawaPay = () => {
+    toast({
+      title: "PawaPay en cours d'activation",
+      description: "L'intégration sécurisée PawaPay est en cours de configuration finale.",
+    });
   };
 
   return (
@@ -222,18 +229,37 @@ const VerifySeller = () => {
                 ))}
               </div>
 
-              <div className="bg-primary/5 p-4 rounded-xl border border-primary/20 space-y-3">
-                <p className="text-xs font-medium flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-primary" />
-                  Une fois le transfert effectué :
-                </p>
+              <div className="space-y-4">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">Ou payer en ligne</span>
+                  </div>
+                </div>
+
                 <Button 
-                  onClick={handleWhatsAppConfirm}
-                  className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white gap-2"
+                  onClick={handlePawaPay}
+                  className="w-full h-12 bg-primary hover:bg-primary/90 text-white gap-2 font-bold shadow-lg"
                 >
-                  <MessageSquare className="w-4 h-4" />
-                  Confirmer sur WhatsApp
+                  <CreditCard className="w-5 h-5" />
+                  Payer par Carte ou Mobile (PawaPay)
                 </Button>
+
+                <div className="bg-primary/5 p-4 rounded-xl border border-primary/20 space-y-3">
+                  <p className="text-xs font-medium flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-primary" />
+                    Confirmation manuelle :
+                  </p>
+                  <Button 
+                    onClick={handleWhatsAppConfirm}
+                    className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white gap-2"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    Confirmer sur WhatsApp
+                  </Button>
+                </div>
               </div>
             </div>
           </DialogContent>
