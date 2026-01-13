@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,26 +9,28 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { CompareProvider } from "@/components/compare/CompareContext";
 import { CompareBar } from "@/components/compare/CompareBar";
 import { IncomingCallDialog } from "@/components/calls/IncomingCallDialog";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import Sell from "./pages/Sell";
-import Profile from "./pages/Profile";
-import Messages from "./pages/Messages";
-import Call from "./pages/Call";
-import CallHistory from "./pages/CallHistory";
-import ProductDetail from "./pages/ProductDetail";
-import MyProducts from "./pages/MyProducts";
-import Favorites from "./pages/Favorites";
-import Search from "./pages/Search";
-import EditProduct from "./pages/EditProduct";
-import Admin from "./pages/Admin";
-import SellerProfile from "./pages/SellerProfile";
-import Compare from "./pages/Compare";
-import Install from "./pages/Install";
-import NotFound from "./pages/NotFound";
 import { useOnlineStatus } from "./hooks/useOnlineStatus";
 import { useNotifications } from "./hooks/useNotifications";
 import { usePushNotifications } from "./hooks/usePushNotifications";
+
+// Lazy loading pages
+const Index = lazy(() => import("./pages/Index"));
+const Auth = lazy(() => import("./pages/Auth"));
+const Sell = lazy(() => import("./pages/Sell"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Messages = lazy(() => import("./pages/Messages"));
+const Call = lazy(() => import("./pages/Call"));
+const CallHistory = lazy(() => import("./pages/CallHistory"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const MyProducts = lazy(() => import("./pages/MyProducts"));
+const Favorites = lazy(() => import("./pages/Favorites"));
+const Search = lazy(() => import("./pages/Search"));
+const EditProduct = lazy(() => import("./pages/EditProduct"));
+const Admin = lazy(() => import("./pages/Admin"));
+const SellerProfile = lazy(() => import("./pages/SellerProfile"));
+const Compare = lazy(() => import("./pages/Compare"));
+const Install = lazy(() => import("./pages/Install"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
@@ -49,33 +52,38 @@ const App = () => (
         <CompareProvider>
           <Toaster />
           <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <OnlineStatusTracker />
-            <CallHandler />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/sell" element={<Sell />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/messages" element={<Messages />} />
-              <Route path="/call/:userId" element={<Call />} />
-              <Route path="/call-history" element={<CallHistory />} />
-              <Route path="/product/:id" element={<ProductDetail />} />
-              <Route path="/my-products" element={<MyProducts />} />
-              <Route path="/favorites" element={<Favorites />} />
-              <Route path="/search" element={<Search />} />
-              <Route path="/edit-product/:id" element={<EditProduct />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/seller/:sellerId" element={<SellerProfile />} />
-              <Route path="/compare" element={<Compare />} />
-              <Route path="/install" element={<Install />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <CompareBar />
-          </AuthProvider>
-        </BrowserRouter>
+          <BrowserRouter>
+            <AuthProvider>
+              <OnlineStatusTracker />
+              <CallHandler />
+              <Suspense fallback={
+                <div className="min-h-screen flex items-center justify-center bg-background">
+                  <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                </div>
+              }>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/sell" element={<Sell />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/messages" element={<Messages />} />
+                  <Route path="/call/:userId" element={<Call />} />
+                  <Route path="/call-history" element={<CallHistory />} />
+                  <Route path="/product/:id" element={<ProductDetail />} />
+                  <Route path="/my-products" element={<MyProducts />} />
+                  <Route path="/favorites" element={<Favorites />} />
+                  <Route path="/search" element={<Search />} />
+                  <Route path="/edit-product/:id" element={<EditProduct />} />
+                  <Route path="/admin" element={<Admin />} />
+                  <Route path="/seller/:sellerId" element={<SellerProfile />} />
+                  <Route path="/compare" element={<Compare />} />
+                  <Route path="/install" element={<Install />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+              <CompareBar />
+            </AuthProvider>
+          </BrowserRouter>
         </CompareProvider>
       </TooltipProvider>
     </ThemeProvider>

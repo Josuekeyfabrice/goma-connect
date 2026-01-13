@@ -12,11 +12,16 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-tabs'],
-          maps: ['mapbox-gl'],
-          charts: ['recharts'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('mapbox-gl')) return 'maps';
+            if (id.includes('recharts')) return 'charts';
+            if (id.includes('framer-motion')) return 'animations';
+            if (id.includes('@radix-ui')) return 'radix-ui';
+            if (id.includes('lucide-react')) return 'icons';
+            if (id.includes('supabase')) return 'supabase';
+            return 'vendor';
+          }
         },
       },
     },
