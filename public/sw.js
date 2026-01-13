@@ -1,13 +1,60 @@
-// Service Worker for Push Notifications
+const CACHE_NAME = 'gomacascade-v1';
+const ASSETS_TO_CACHE = [
+  '/',
+  '/index.html',
+  '/manifest.webmanifest',
+  '/favicon.ico',
+  '/pwa-192x192.png',
+  '/pwa-512x512.png',
+  '/placeholder.svg'
+];
 
+// Install event - cache core assets
 self.addEventListener('install', (event) => {
-  console.log('Service Worker installed');
+  console.log('Service Worker installing...');
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(ASSETS_TO_CACHE);
+    })
+  );
   self.skipWaiting();
 });
 
+// Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker activated');
-  event.waitUntil(clients.claim());
+  console.log('Service Worker activating...');
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+  return self.clients.claim();
+});
+
+// Fetch event - Stale-While-Revalidate strategy
+self.addEventListener('fetch', (event) => {
+  // Skip non-GET requests and Supabase API calls
+  if (event.request.method !== 'GET' || event.request.url.includes('supabase.co')) {
+    return;
+  }
+
+  event.respondWith(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.match(event.request).then((response) => {
+        const fetchPromise = fetch(event.request).then((networkResponse) => {
+          cache.put(event.request, networkResponse.clone());
+          return networkResponse;
+        });
+        return response || fetchPromise;
+      });
+    })
+  );
 });
 
 // Handle push notifications
@@ -53,8 +100,6 @@ self.addEventListener('push', (event) => {
 
 // Handle notification clicks
 self.addEventListener('notificationclick', (event) => {
-  console.log('Notification clicked:', event);
-  
   event.notification.close();
   
   const data = event.notification.data || {};
@@ -63,7 +108,6 @@ self.addEventListener('notificationclick', (event) => {
   if (event.action === 'accept' && data.callId && data.callerId) {
     url = `/call/${data.callerId}?callId=${data.callId}&type=${data.callType || 'voice'}`;
   } else if (event.action === 'reject') {
-    // Just close, rejection handled by the app
     return;
   } else if (data.url) {
     url = data.url;
@@ -75,7 +119,6 @@ self.addEventListener('notificationclick', (event) => {
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // Focus existing window if available
       for (const client of clientList) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
           client.focus();
@@ -83,15 +126,9 @@ self.addEventListener('notificationclick', (event) => {
           return;
         }
       }
-      // Open new window
       if (clients.openWindow) {
         return clients.openWindow(url);
       }
     })
   );
-});
-
-// Handle notification close
-self.addEventListener('notificationclose', (event) => {
-  console.log('Notification closed:', event);
 });
