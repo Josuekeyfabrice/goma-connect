@@ -241,8 +241,49 @@ const Messages = () => {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 container mx-auto px-4 py-4">
+          <div className="h-[calc(100vh-200px)] flex rounded-lg border bg-background overflow-hidden">
+            <div className="w-full md:w-80 border-r flex flex-col">
+              <div className="p-4 border-b">
+                <Skeleton className="h-8 w-32" />
+              </div>
+              <div className="flex-1 p-4 space-y-4">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="hidden md:flex flex-1 flex-col">
+              <div className="p-4 border-b flex items-center gap-3">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              </div>
+              <div className="flex-1 p-6 space-y-6">
+                <div className="flex justify-start">
+                  <Skeleton className="h-12 w-64 rounded-2xl rounded-tl-none" />
+                </div>
+                <div className="flex justify-end">
+                  <Skeleton className="h-12 w-48 rounded-2xl rounded-tr-none" />
+                </div>
+                <div className="flex justify-start">
+                  <Skeleton className="h-20 w-80 rounded-2xl rounded-tl-none" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+        <Footer />
       </div>
     );
   }

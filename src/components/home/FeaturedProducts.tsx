@@ -104,20 +104,47 @@ export const FeaturedProducts = () => {
 
   if (loading) {
     return (
-      <section className="container mx-auto px-4 py-12">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-2xl font-bold md:text-3xl">Annonces récentes</h2>
-        </div>
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="space-y-4">
-              <Skeleton className="aspect-[4/3] w-full rounded-lg" />
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-6 w-1/2" />
-            </div>
-          ))}
-        </div>
-      </section>
+      <div className="space-y-12">
+        <section className="container mx-auto px-4 py-12 bg-muted/30 rounded-2xl my-8">
+          <div className="flex items-center gap-2 mb-6">
+            <Skeleton className="h-6 w-6 rounded-full" />
+            <Skeleton className="h-8 w-48" />
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="space-y-4 p-4 bg-background rounded-xl border">
+                <Skeleton className="aspect-[4/3] w-full rounded-lg" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-6 w-1/2" />
+                  <div className="flex gap-2 pt-2">
+                    <Skeleton className="h-4 w-1/4" />
+                    <Skeleton className="h-4 w-1/4" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="container mx-auto px-4 py-12">
+          <div className="flex items-center justify-between mb-8">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-10 w-24" />
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="space-y-4">
+                <Skeleton className="aspect-[4/3] w-full rounded-lg" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-6 w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
     );
   }
 
