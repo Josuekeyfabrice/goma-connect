@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Search, Heart, MessageCircle, User, Plus, LogOut, Phone, Shield } from 'lucide-react';
+import { Menu, X, Search, Heart, MessageCircle, User, Plus, LogOut, Phone, Shield, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,36 @@ export const Header = () => {
   const { user, signOut } = useAuth();
   const { counts } = useNotificationCounts();
   const navigate = useNavigate();
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallBtn, setShowInstallBtn] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallBtn(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setShowInstallBtn(false);
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstall = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setShowInstallBtn(false);
+    }
+    setDeferredPrompt(null);
+  };
 
   useEffect(() => {
     const checkAdminRole = async () => {
@@ -87,6 +117,12 @@ export const Header = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden items-center gap-2 md:flex">
+            {showInstallBtn && (
+              <Button variant="ghost" size="sm" onClick={handleInstall} className="gap-2 text-primary">
+                <Download className="h-4 w-4" />
+                Installer
+              </Button>
+            )}
             <ThemeToggle />
             {user ? (
               <>
@@ -202,6 +238,12 @@ export const Header = () => {
               <span className="text-sm font-medium">Mode</span>
               <ThemeToggle />
             </div>
+            {showInstallBtn && (
+              <Button variant="outline" className="justify-start text-primary" onClick={handleInstall}>
+                <Download className="mr-2 h-5 w-5" />
+                Installer l'application
+              </Button>
+            )}
             {user ? (
               <>
                 <Button variant="ghost" className="justify-start" asChild>
