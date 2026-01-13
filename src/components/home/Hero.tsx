@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { ArrowRight, ShoppingBag, Shield, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -12,7 +13,12 @@ export const Hero = () => {
       </div>
 
       <div className="container relative mx-auto px-4 py-16 md:py-24">
-        <div className="mx-auto max-w-3xl text-center">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="mx-auto max-w-3xl text-center"
+        >
           <h1 className="font-display text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
             Achetez & Vendez à{' '}
             <span className="text-gradient">Goma</span>
@@ -37,10 +43,15 @@ export const Hero = () => {
               </Link>
             </Button>
           </div>
-        </div>
+        </motion.div>
 
         {/* Features */}
-        <div className="mt-16 grid gap-6 md:grid-cols-3">
+        <motion.div 
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="mt-16 grid gap-6 md:grid-cols-3"
+        >
           <div className="rounded-2xl border bg-card p-6 text-center shadow-card">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl gradient-primary">
               <ShoppingBag className="h-6 w-6 text-primary-foreground" />
@@ -68,7 +79,7 @@ export const Hero = () => {
               Messagerie instantanée et appels vocaux intégrés
             </p>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

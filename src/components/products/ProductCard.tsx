@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Heart, MapPin, Eye, GitCompare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -35,8 +36,14 @@ export const ProductCard = ({ product, onFavorite, isFavorite, distance }: Produ
   };
 
   return (
-    <Card className="group overflow-hidden transition-all hover:shadow-card animate-fade-in">
-      <Link to={`/product/${product.id}`}>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -5 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Card className="group overflow-hidden transition-all hover:shadow-card h-full">
+        <Link to={`/product/${product.id}`}>
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
           <img
             src={imageUrl}
@@ -108,7 +115,8 @@ export const ProductCard = ({ product, onFavorite, isFavorite, distance }: Produ
             <span>{product.views_count || 0}</span>
           </div>
         </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 };
