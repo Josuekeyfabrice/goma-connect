@@ -19,15 +19,18 @@ export const Hero = () => {
           transition={{ duration: 0.6 }}
           className="mx-auto max-w-3xl text-center"
         >
-          <h1 className="font-display text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
+          <h1 className="font-display text-4xl font-extrabold tracking-tight md:text-6xl lg:text-7xl leading-tight">
             Achetez & Vendez à{' '}
-            <span className="text-gradient">Goma</span>
+            <span className="relative inline-block">
+              <span className="relative z-10 text-primary">Goma</span>
+              <span className="absolute bottom-2 left-0 h-3 w-full bg-primary/20 -rotate-1" />
+            </span>
             <br />
-            en toute simplicité
+            <span className="text-foreground/90">en toute simplicité</span>
           </h1>
-          <p className="mt-6 text-lg text-muted-foreground md:text-xl">
-            La première marketplace de Goma et ses environs. Trouvez ce dont vous avez besoin 
-            ou vendez vos articles en quelques clics.
+          <p className="mt-8 text-lg text-muted-foreground md:text-2xl font-medium max-w-2xl mx-auto leading-relaxed">
+            La première marketplace de <span className="text-foreground font-semibold">Goma</span> et ses environs. 
+            Trouvez ce dont vous avez besoin ou vendez vos articles en quelques clics.
           </p>
           <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-center">
             <Button size="lg" className="gap-2 gradient-primary text-primary-foreground shadow-warm" asChild>

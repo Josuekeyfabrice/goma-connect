@@ -30,6 +30,7 @@ const Admin = lazy(() => import("./pages/Admin"));
 const SellerProfile = lazy(() => import("./pages/SellerProfile"));
 const Compare = lazy(() => import("./pages/Compare"));
 const Install = lazy(() => import("./pages/Install"));
+const LiveTV = lazy(() => import("./pages/LiveTV"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -78,6 +79,7 @@ const App = () => (
                   <Route path="/seller/:sellerId" element={<SellerProfile />} />
                   <Route path="/compare" element={<Compare />} />
                   <Route path="/install" element={<Install />} />
+                  <Route path="/live-tv" element={<LiveTV />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
