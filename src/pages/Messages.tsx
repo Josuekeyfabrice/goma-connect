@@ -9,7 +9,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { OnlineIndicator } from '@/components/ui/OnlineIndicator';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Send, Phone, Video, Loader2, ArrowLeft } from 'lucide-react';
+import { Send, Phone, Video, Loader2, ArrowLeft, Check, CheckCheck } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -36,6 +37,8 @@ const Messages = () => {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -207,7 +210,12 @@ const Messages = () => {
   // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, isTyping]);
+
+  const handleTyping = () => {
+    // Simulate typing indicator logic
+    // In a real app, this would send a 'typing' event via Supabase Realtime
+  };
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -390,27 +398,54 @@ const Messages = () => {
                 {/* Messages */}
                 <ScrollArea className="flex-1 p-4">
                   <div className="space-y-4">
-                    {messages.map((msg) => (
-                      <div
-                        key={msg.id}
-                        className={`flex ${msg.sender_id === user.id ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div
-                          className={`max-w-[70%] rounded-2xl px-4 py-2 ${
-                            msg.sender_id === user.id
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted'
-                          }`}
+                    <AnimatePresence initial={false}>
+                      {messages.map((msg) => (
+                        <motion.div
+                          key={msg.id}
+                          initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          className={`flex ${msg.sender_id === user.id ? 'justify-end' : 'justify-start'}`}
                         >
-                          <p>{msg.content}</p>
-                          <p className={`text-xs mt-1 ${
-                            msg.sender_id === user.id ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                          }`}>
-                            {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true, locale: fr })}
-                          </p>
+                          <div
+                            className={`max-w-[70%] rounded-2xl px-4 py-2 shadow-sm ${
+                              msg.sender_id === user.id
+                                ? 'bg-primary text-primary-foreground rounded-tr-none'
+                                : 'bg-muted rounded-tl-none'
+                            }`}
+                          >
+                            <p className="text-sm md:text-base">{msg.content}</p>
+                            <div className="flex items-center justify-end gap-1 mt-1">
+                              <p className={`text-[10px] ${
+                                msg.sender_id === user.id ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                              }`}>
+                                {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true, locale: fr })}
+                              </p>
+                              {msg.sender_id === user.id && (
+                                msg.is_read ? (
+                                  <CheckCheck className="h-3 w-3 text-primary-foreground/90" />
+                                ) : (
+                                  <Check className="h-3 w-3 text-primary-foreground/70" />
+                                )
+                              )}
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                    
+                    {isTyping && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex justify-start"
+                      >
+                        <div className="bg-muted rounded-2xl rounded-tl-none px-4 py-3 flex gap-1">
+                          <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                          <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                          <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                         </div>
-                      </div>
-                    ))}
+                      </motion.div>
+                    )}
                     <div ref={messagesEndRef} />
                   </div>
                 </ScrollArea>
