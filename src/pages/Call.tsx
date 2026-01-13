@@ -4,10 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Phone, PhoneOff, Video, VideoOff, Mic, MicOff, Loader2 } from 'lucide-react';
+import { Phone, PhoneOff, Video, VideoOff, Mic, MicOff, Loader2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { WebRTCSignaling, getRTCConfiguration, type SignalingMessage } from '@/utils/webrtc-signaling';
+import { useConnectionQuality } from '@/hooks/useConnectionQuality';
+import { SignalStrengthIndicator } from '@/components/calls/SignalStrengthIndicator';
 import type { Profile, Call as CallType } from '@/types/database';
+
+const MAX_RECONNECTION_ATTEMPTS = 3;
+const RECONNECTION_DELAY = 2000;
 
 const Call = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -20,13 +25,14 @@ const Call = () => {
   const { toast } = useToast();
 
   const [partner, setPartner] = useState<Profile | null>(null);
-  const [callStatus, setCallStatus] = useState<'connecting' | 'ringing' | 'connected' | 'ended'>('connecting');
+  const [callStatus, setCallStatus] = useState<'connecting' | 'ringing' | 'connected' | 'ended' | 'reconnecting'>('connecting');
   const [call, setCall] = useState<CallType | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoEnabled, setIsVideoEnabled] = useState(callType === 'video');
   const [callDuration, setCallDuration] = useState(0);
   const [connectionState, setConnectionState] = useState<string>('new');
   const [isWebRTCReady, setIsWebRTCReady] = useState(false);
+  const [reconnectionAttempts, setReconnectionAttempts] = useState(0);
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -37,6 +43,13 @@ const Call = () => {
   const signalingRef = useRef<WebRTCSignaling | null>(null);
   const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
   const hasCreatedOfferRef = useRef(false);
+  const isReconnectingRef = useRef(false);
+
+  // Connection quality monitoring
+  const connectionQuality = useConnectionQuality({
+    peerConnection: peerConnectionRef.current,
+    enabled: callStatus === 'connected',
+  });
 
   // Handle incoming signaling messages
   const handleSignalingMessage = useCallback(async (message: SignalingMessage) => {
@@ -63,11 +76,9 @@ const Call = () => {
         await pc.setRemoteDescription(new RTCSessionDescription(message.payload as RTCSessionDescriptionInit));
         console.log('Remote description set, creating answer...');
         
-        // Process pending candidates after setting remote description
         for (const candidate of pendingCandidatesRef.current) {
           try {
             await pc.addIceCandidate(new RTCIceCandidate(candidate));
-            console.log('Added pending ICE candidate');
           } catch (e) {
             console.error('Error adding pending ICE candidate:', e);
           }
@@ -76,7 +87,6 @@ const Call = () => {
         
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
-        console.log('Answer created and set as local description');
         await signalingRef.current?.sendAnswer(answer);
         
       } else if (message.type === 'answer') {
@@ -88,13 +98,10 @@ const Call = () => {
         }
         
         await pc.setRemoteDescription(new RTCSessionDescription(message.payload as RTCSessionDescriptionInit));
-        console.log('Answer set as remote description');
         
-        // Process pending candidates after setting remote description
         for (const candidate of pendingCandidatesRef.current) {
           try {
             await pc.addIceCandidate(new RTCIceCandidate(candidate));
-            console.log('Added pending ICE candidate');
           } catch (e) {
             console.error('Error adding pending ICE candidate:', e);
           }
@@ -102,18 +109,15 @@ const Call = () => {
         pendingCandidatesRef.current = [];
         
       } else if (message.type === 'ice-candidate') {
-        console.log('Received ICE candidate');
         const candidate = message.payload as RTCIceCandidateInit;
         
         if (pc.remoteDescription && pc.remoteDescription.type) {
           try {
             await pc.addIceCandidate(new RTCIceCandidate(candidate));
-            console.log('ICE candidate added successfully');
           } catch (e) {
             console.error('Error adding ICE candidate:', e);
           }
         } else {
-          console.log('Queuing ICE candidate, remote description not set yet');
           pendingCandidatesRef.current.push(candidate);
         }
       }
@@ -122,6 +126,50 @@ const Call = () => {
     }
   }, []);
 
+  // Reconnection logic
+  const attemptReconnection = useCallback(async () => {
+    if (isReconnectingRef.current || reconnectionAttempts >= MAX_RECONNECTION_ATTEMPTS) {
+      console.log('Max reconnection attempts reached or already reconnecting');
+      return false;
+    }
+
+    isReconnectingRef.current = true;
+    setCallStatus('reconnecting');
+    setReconnectionAttempts(prev => prev + 1);
+
+    console.log(`Attempting reconnection ${reconnectionAttempts + 1}/${MAX_RECONNECTION_ATTEMPTS}`);
+
+    try {
+      // Close existing connection
+      if (peerConnectionRef.current) {
+        peerConnectionRef.current.close();
+        peerConnectionRef.current = null;
+      }
+
+      // Wait before reconnecting
+      await new Promise(resolve => setTimeout(resolve, RECONNECTION_DELAY));
+
+      // Reinitialize WebRTC
+      if (call) {
+        hasCreatedOfferRef.current = false;
+        await initWebRTC(!incomingCallId, call.id);
+        
+        toast({
+          title: "Reconnexion réussie",
+          description: "La connexion a été rétablie",
+        });
+        
+        isReconnectingRef.current = false;
+        return true;
+      }
+    } catch (error) {
+      console.error('Reconnection failed:', error);
+    }
+
+    isReconnectingRef.current = false;
+    return false;
+  }, [reconnectionAttempts, call, incomingCallId, toast]);
+
   // Initialize WebRTC
   const initWebRTC = useCallback(async (isInitiator: boolean, callId: string) => {
     if (!user || !userId) {
@@ -129,7 +177,7 @@ const Call = () => {
       return;
     }
     
-    if (peerConnectionRef.current) {
+    if (peerConnectionRef.current && !isReconnectingRef.current) {
       console.log('WebRTC already initialized');
       return;
     }
@@ -137,7 +185,6 @@ const Call = () => {
     console.log('Initializing WebRTC, isInitiator:', isInitiator, 'callId:', callId);
 
     try {
-      // Get media stream
       const constraints = {
         audio: {
           echoCancellation: true,
@@ -151,10 +198,7 @@ const Call = () => {
         } : false,
       };
 
-      console.log('Requesting media with constraints:', constraints);
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      console.log('Got local stream with tracks:', stream.getTracks().map(t => `${t.kind}: ${t.enabled}`));
-
       localStreamRef.current = stream;
       
       if (localVideoRef.current && callType === 'video') {
@@ -162,108 +206,78 @@ const Call = () => {
         localVideoRef.current.muted = true;
       }
 
-      // Create peer connection with improved configuration
       const configuration = getRTCConfiguration();
-      console.log('Creating peer connection with config:', configuration);
       const pc = new RTCPeerConnection(configuration);
       peerConnectionRef.current = pc;
 
-      // Create remote stream
       remoteStreamRef.current = new MediaStream();
 
-      // Add tracks to peer connection
       stream.getTracks().forEach(track => {
-        console.log('Adding local track to PC:', track.kind, track.label);
         pc.addTrack(track, stream);
       });
 
-      // Handle incoming tracks - CRITICAL for audio
       pc.ontrack = (event) => {
-        console.log('Received remote track:', event.track.kind, 'streams:', event.streams.length);
+        console.log('Received remote track:', event.track.kind);
         
         if (event.streams && event.streams[0]) {
           const remoteStream = event.streams[0];
           
           if (event.track.kind === 'video' && remoteVideoRef.current) {
-            console.log('Setting remote video stream');
             remoteVideoRef.current.srcObject = remoteStream;
           }
           
           if (event.track.kind === 'audio' && remoteAudioRef.current) {
-            console.log('Setting remote audio stream');
             remoteAudioRef.current.srcObject = remoteStream;
-            // Ensure audio plays
-            remoteAudioRef.current.play().catch(e => {
-              console.log('Auto-play prevented, user interaction needed:', e);
-            });
+            remoteAudioRef.current.play().catch(console.log);
           }
           
           remoteStreamRef.current = remoteStream;
         } else {
-          // Fallback: add track to our created stream
-          console.log('Adding track to remote stream manually');
           remoteStreamRef.current?.addTrack(event.track);
           
           if (event.track.kind === 'audio' && remoteAudioRef.current) {
             remoteAudioRef.current.srcObject = remoteStreamRef.current;
-            remoteAudioRef.current.play().catch(e => {
-              console.log('Auto-play prevented:', e);
-            });
+            remoteAudioRef.current.play().catch(console.log);
           }
           
           if (event.track.kind === 'video' && remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = remoteStreamRef.current;
           }
         }
-        
-        // Also try to play track directly
-        event.track.onunmute = () => {
-          console.log('Track unmuted:', event.track.kind);
-        };
       };
 
-      // Handle ICE candidates
       pc.onicecandidate = (event) => {
         if (event.candidate) {
-          console.log('Sending ICE candidate:', event.candidate.type, event.candidate.protocol);
           signalingRef.current?.sendIceCandidate(event.candidate);
-        } else {
-          console.log('ICE gathering complete');
         }
       };
 
-      pc.onicegatheringstatechange = () => {
-        console.log('ICE gathering state:', pc.iceGatheringState);
-      };
-
-      // Monitor connection state
       pc.onconnectionstatechange = () => {
         console.log('Connection state changed to:', pc.connectionState);
         setConnectionState(pc.connectionState);
         
         if (pc.connectionState === 'connected') {
-          console.log('WebRTC connected! Starting call timer.');
           setCallStatus('connected');
           setIsWebRTCReady(true);
+          setReconnectionAttempts(0);
           
-          // Ensure audio is playing
           if (remoteAudioRef.current && remoteAudioRef.current.srcObject) {
-            remoteAudioRef.current.play().catch(e => console.log('Play error:', e));
+            remoteAudioRef.current.play().catch(console.log);
           }
         } else if (pc.connectionState === 'failed') {
-          console.error('Connection failed');
-          toast({
-            title: "Connexion échouée",
-            description: "Impossible d'établir la connexion. Réessayez.",
-            variant: "destructive",
-          });
+          console.error('Connection failed, attempting reconnection...');
+          attemptReconnection();
         } else if (pc.connectionState === 'disconnected') {
-          console.log('Connection disconnected');
           toast({
-            title: "Connexion perdue",
-            description: "La connexion avec l'autre utilisateur a été interrompue",
-            variant: "destructive",
+            title: "Connexion instable",
+            description: "Tentative de reconnexion...",
           });
+          // Wait a bit before attempting reconnection
+          setTimeout(() => {
+            if (peerConnectionRef.current?.connectionState === 'disconnected') {
+              attemptReconnection();
+            }
+          }, 3000);
         }
       };
 
@@ -271,18 +285,13 @@ const Call = () => {
         console.log('ICE connection state:', pc.iceConnectionState);
         
         if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
-          console.log('ICE connected, call should be active now');
           setCallStatus('connected');
           setIsWebRTCReady(true);
+        } else if (pc.iceConnectionState === 'failed') {
+          attemptReconnection();
         }
       };
 
-      pc.onsignalingstatechange = () => {
-        console.log('Signaling state:', pc.signalingState);
-      };
-
-      // Setup signaling
-      console.log('Setting up signaling channel...');
       signalingRef.current = new WebRTCSignaling(
         callId,
         user.id,
@@ -290,32 +299,19 @@ const Call = () => {
         handleSignalingMessage
       );
       await signalingRef.current.connect();
-      console.log('Signaling connected');
 
-      // Process any pending candidates that arrived before PC was ready
-      if (pendingCandidatesRef.current.length > 0) {
-        console.log('Processing', pendingCandidatesRef.current.length, 'pending candidates');
-      }
-
-      // If initiator, create and send offer
       if (isInitiator && !hasCreatedOfferRef.current) {
         hasCreatedOfferRef.current = true;
-        console.log('Creating offer...');
         
-        // Small delay to ensure everything is set up
         await new Promise(resolve => setTimeout(resolve, 500));
         
         const offer = await pc.createOffer({
           offerToReceiveAudio: true,
           offerToReceiveVideo: callType === 'video',
         });
-        console.log('Offer created:', offer.type);
         
         await pc.setLocalDescription(offer);
-        console.log('Offer set as local description');
-        
         await signalingRef.current.sendOffer(offer);
-        console.log('Offer sent');
       }
 
     } catch (error) {
@@ -326,7 +322,7 @@ const Call = () => {
         variant: "destructive",
       });
     }
-  }, [user, userId, callType, handleSignalingMessage, toast]);
+  }, [user, userId, callType, handleSignalingMessage, toast, attemptReconnection]);
 
   // Initialize call
   useEffect(() => {
@@ -336,7 +332,6 @@ const Call = () => {
     }
 
     const init = async () => {
-      // Load partner profile
       const { data: profileData } = await supabase
         .from('profiles')
         .select('*')
@@ -347,9 +342,7 @@ const Call = () => {
         setPartner(profileData as Profile);
       }
 
-      // If incoming call, get call details
       if (incomingCallId) {
-        console.log('Incoming call mode, callId:', incomingCallId);
         const { data: callData } = await supabase
           .from('calls')
           .select('*')
@@ -361,8 +354,6 @@ const Call = () => {
           setCallStatus('ringing');
         }
       } else {
-        // Create outgoing call
-        console.log('Creating outgoing call...');
         const { data: callData, error } = await supabase
           .from('calls')
           .insert({
@@ -375,7 +366,6 @@ const Call = () => {
           .single();
 
         if (error) {
-          console.error('Error creating call:', error);
           toast({
             title: "Erreur",
             description: "Impossible d'initier l'appel",
@@ -385,11 +375,8 @@ const Call = () => {
           return;
         }
 
-        console.log('Call created:', callData.id);
         setCall(callData as CallType);
         setCallStatus('ringing');
-        
-        // Initialize WebRTC as initiator
         await initWebRTC(true, callData.id);
       }
     };
@@ -405,8 +392,6 @@ const Call = () => {
   useEffect(() => {
     if (!call) return;
 
-    console.log('Subscribing to call status changes for:', call.id);
-
     const channel = supabase
       .channel(`call-status-${call.id}`)
       .on(
@@ -419,12 +404,10 @@ const Call = () => {
         },
         async (payload) => {
           const updatedCall = payload.new as CallType;
-          console.log('Call status updated:', updatedCall.status);
           setCall(updatedCall);
 
           if (updatedCall.status === 'accepted') {
-            console.log('Call accepted by receiver, should be connected');
-            // The receiver will init WebRTC, we just wait for connection
+            console.log('Call accepted');
           } else if (updatedCall.status === 'rejected') {
             setCallStatus('ended');
             toast({
@@ -449,7 +432,6 @@ const Call = () => {
   useEffect(() => {
     if (callStatus !== 'connected' || !isWebRTCReady) return;
 
-    console.log('Starting call duration timer');
     const interval = setInterval(() => {
       setCallDuration(prev => prev + 1);
     }, 1000);
@@ -458,39 +440,26 @@ const Call = () => {
   }, [callStatus, isWebRTCReady]);
 
   const cleanup = useCallback(() => {
-    console.log('Cleaning up WebRTC resources');
-    
-    // Stop local stream
-    localStreamRef.current?.getTracks().forEach(track => {
-      track.stop();
-      console.log('Stopped local track:', track.kind);
-    });
+    localStreamRef.current?.getTracks().forEach(track => track.stop());
     localStreamRef.current = null;
-    
-    // Clear remote stream
     remoteStreamRef.current = null;
     
-    // Close peer connection
     if (peerConnectionRef.current) {
       peerConnectionRef.current.close();
       peerConnectionRef.current = null;
     }
 
-    // Disconnect signaling
     signalingRef.current?.disconnect();
     signalingRef.current = null;
 
-    // Clear pending candidates
     pendingCandidatesRef.current = [];
     hasCreatedOfferRef.current = false;
+    isReconnectingRef.current = false;
   }, []);
 
   const acceptCall = async () => {
     if (!call) return;
 
-    console.log('Accepting call:', call.id);
-
-    // Update call status first
     await supabase
       .from('calls')
       .update({ 
@@ -500,15 +469,11 @@ const Call = () => {
       .eq('id', call.id);
 
     setCallStatus('connecting');
-    
-    // Initialize WebRTC as receiver (not initiator)
     await initWebRTC(false, call.id);
   };
 
   const rejectCall = async () => {
     if (!call) return;
-
-    console.log('Rejecting call:', call.id);
 
     await supabase
       .from('calls')
@@ -520,10 +485,8 @@ const Call = () => {
   };
 
   const endCall = async () => {
-    console.log('Ending call');
     cleanup();
 
-    // Update call status
     if (call && callStatus !== 'ended') {
       await supabase
         .from('calls')
@@ -543,7 +506,6 @@ const Call = () => {
       if (audioTrack) {
         audioTrack.enabled = !audioTrack.enabled;
         setIsMuted(!audioTrack.enabled);
-        console.log('Mute toggled:', !audioTrack.enabled);
       }
     }
   };
@@ -554,7 +516,6 @@ const Call = () => {
       if (videoTrack) {
         videoTrack.enabled = !videoTrack.enabled;
         setIsVideoEnabled(videoTrack.enabled);
-        console.log('Video toggled:', videoTrack.enabled);
       }
     }
   };
@@ -565,11 +526,15 @@ const Call = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // User click handler to ensure audio plays (mobile requirement)
   const handleUserInteraction = () => {
     if (remoteAudioRef.current && remoteAudioRef.current.srcObject) {
-      remoteAudioRef.current.play().catch(e => console.log('Play after interaction:', e));
+      remoteAudioRef.current.play().catch(console.log);
     }
+  };
+
+  const handleManualReconnect = () => {
+    setReconnectionAttempts(0);
+    attemptReconnection();
   };
 
   if (!partner) {
@@ -582,7 +547,6 @@ const Call = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col" onClick={handleUserInteraction}>
-      {/* Hidden audio element for remote audio - CRITICAL */}
       <audio 
         ref={remoteAudioRef} 
         autoPlay 
@@ -606,8 +570,11 @@ const Call = () => {
             muted
             className="absolute bottom-4 right-4 w-32 h-24 rounded-lg object-cover border-2 border-background"
           />
-          <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
-            {formatDuration(callDuration)}
+          <div className="absolute top-4 left-4 flex items-center gap-2">
+            <div className="bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+              {formatDuration(callDuration)}
+            </div>
+            <SignalStrengthIndicator quality={connectionQuality} />
           </div>
         </div>
       )}
@@ -628,14 +595,22 @@ const Call = () => {
             {callStatus === 'connecting' && 'Connexion en cours...'}
             {callStatus === 'ringing' && (incomingCallId ? 'Appel entrant...' : 'Appel en cours...')}
             {callStatus === 'connected' && formatDuration(callDuration)}
+            {callStatus === 'reconnecting' && `Reconnexion... (${reconnectionAttempts}/${MAX_RECONNECTION_ATTEMPTS})`}
             {callStatus === 'ended' && 'Appel terminé'}
           </p>
+
+          {/* Signal strength for voice calls */}
+          {callStatus === 'connected' && (
+            <div className="mb-4">
+              <SignalStrengthIndicator quality={connectionQuality} />
+            </div>
+          )}
 
           {callStatus === 'ringing' && (
             <div className="flex items-center justify-center animate-pulse">
               <div className="h-4 w-4 rounded-full bg-primary mr-2" />
-              <div className="h-4 w-4 rounded-full bg-primary mr-2 animation-delay-200" />
-              <div className="h-4 w-4 rounded-full bg-primary animation-delay-400" />
+              <div className="h-4 w-4 rounded-full bg-primary mr-2" />
+              <div className="h-4 w-4 rounded-full bg-primary" />
             </div>
           )}
 
@@ -647,12 +622,29 @@ const Call = () => {
               </p>
             </div>
           )}
+
+          {callStatus === 'reconnecting' && (
+            <div className="flex flex-col items-center gap-2">
+              <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">
+                Tentative de reconnexion...
+              </p>
+              {reconnectionAttempts >= MAX_RECONNECTION_ATTEMPTS && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleManualReconnect}
+                >
+                  Réessayer manuellement
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       )}
 
       {/* Controls */}
       <div className="p-8 flex items-center justify-center gap-6 bg-muted/50">
-        {/* Incoming call: Accept/Reject */}
         {callStatus === 'ringing' && incomingCallId && (
           <>
             <Button
@@ -673,8 +665,7 @@ const Call = () => {
           </>
         )}
 
-        {/* Connected or Outgoing: Mute, Video toggle, End call */}
-        {(callStatus === 'connected' || callStatus === 'connecting' || (callStatus === 'ringing' && !incomingCallId)) && (
+        {(callStatus === 'connected' || callStatus === 'connecting' || callStatus === 'reconnecting' || (callStatus === 'ringing' && !incomingCallId)) && (
           <>
             <Button
               variant={isMuted ? 'destructive' : 'secondary'}
