@@ -452,76 +452,118 @@ const Call = () => {
   }, [callStatus, isWebRTCReady]);
 
   const cleanup = useCallback(() => {
-    localStreamRef.current?.getTracks().forEach(track => track.stop());
+    stopRingtone();
+    
+    localStreamRef.current?.getTracks().forEach(track => {
+      try {
+        track.stop();
+      } catch (e) {
+        console.error('Error stopping track:', e);
+      }
+    });
     localStreamRef.current = null;
     remoteStreamRef.current = null;
     
     if (peerConnectionRef.current) {
-      peerConnectionRef.current.close();
+      try {
+        peerConnectionRef.current.close();
+      } catch (e) {
+        console.error('Error closing peer connection:', e);
+      }
       peerConnectionRef.current = null;
     }
 
-    signalingRef.current?.disconnect();
-    signalingRef.current = null;
+    if (signalingRef.current) {
+      try {
+        signalingRef.current.disconnect();
+      } catch (e) {
+        console.error('Error disconnecting signaling:', e);
+      }
+      signalingRef.current = null;
+    }
 
     pendingCandidatesRef.current = [];
     hasCreatedOfferRef.current = false;
     isReconnectingRef.current = false;
-  }, []);
+  }, [stopRingtone]);
 
   const acceptCall = async () => {
     if (!call) return;
 
-    // Stop ringtone if it's still playing
-    stopRingtone();
-    setTimeout(() => stopRingtone(), 100);
+    try {
+      stopRingtone();
+      await new Promise(resolve => setTimeout(resolve, 150));
+      stopRingtone();
 
-    await supabase
-      .from('calls')
-      .update({ 
-        status: 'accepted',
-        started_at: new Date().toISOString(),
-      })
-      .eq('id', call.id);
+      const { error } = await supabase
+        .from('calls')
+        .update({ 
+          status: 'accepted',
+          started_at: new Date().toISOString(),
+        })
+        .eq('id', call.id);
 
-    setCallStatus('connecting');
-    await initWebRTC(false, call.id);
+      if (error) throw error;
+
+      setCallStatus('connecting');
+      await initWebRTC(false, call.id);
+    } catch (error) {
+      console.error('Error accepting call:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible d\'accepter l\'appel',
+        variant: 'destructive',
+      });
+    }
   };
 
   const rejectCall = async () => {
     if (!call) return;
 
-    // Stop ringtone if it's still playing
-    stopRingtone();
-    setTimeout(() => stopRingtone(), 100);
+    try {
+      stopRingtone();
+      await new Promise(resolve => setTimeout(resolve, 150));
+      stopRingtone();
 
-    await supabase
-      .from('calls')
-      .update({ status: 'rejected' })
-      .eq('id', call.id);
+      const { error } = await supabase
+        .from('calls')
+        .update({ status: 'rejected' })
+        .eq('id', call.id);
 
-    cleanup();
-    navigate('/messages');
+      if (error) throw error;
+
+      cleanup();
+      navigate('/messages');
+    } catch (error) {
+      console.error('Error rejecting call:', error);
+      cleanup();
+      navigate('/messages');
+    }
   };
 
   const endCall = async () => {
-    // Stop ringtone if it's still playing
-    stopRingtone();
-    setTimeout(() => stopRingtone(), 100);
-    
-    cleanup();
+    try {
+      stopRingtone();
+      await new Promise(resolve => setTimeout(resolve, 150));
+      stopRingtone();
+      
+      if (call && callStatus !== 'ended') {
+        const { error } = await supabase
+          .from('calls')
+          .update({ 
+            status: 'ended',
+            ended_at: new Date().toISOString(),
+          })
+          .eq('id', call.id);
 
-    if (call && callStatus !== 'ended') {
-      await supabase
-        .from('calls')
-        .update({ 
-          status: 'ended',
-          ended_at: new Date().toISOString(),
-        })
-        .eq('id', call.id);
+        if (error) console.error('Error ending call:', error);
+      }
+    } catch (error) {
+      console.error('Error in endCall:', error);
+    } finally {
+      cleanup();
+      navigate('/messages');
     }
-
-    navigate('/messages');
   };
 
   const toggleMute = () => {
