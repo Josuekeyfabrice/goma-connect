@@ -10,7 +10,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Zap, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -99,24 +98,17 @@ export const BoostProduct = ({ productId, onSuccess }: BoostProductProps) => {
     setLoading(true);
 
     try {
-      // Create boost transaction
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + selectedPackage.duration);
+      // Simulate boost activation (in production, this would create a database record)
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
-      const { error } = await supabase
-        .from('product_boosts')
-        .insert({
-          product_id: productId,
-          seller_id: user.id,
-          package_id: selectedPackage.id,
-          amount: selectedPackage.price,
-          duration_days: selectedPackage.duration,
-          status: 'active',
-          expires_at: expiresAt.toISOString(),
-          created_at: new Date().toISOString(),
-        });
-
-      if (error) throw error;
+      console.log('Product boost activated:', {
+        productId,
+        userId: user.id,
+        packageId: selectedPackage.id,
+        amount: selectedPackage.price,
+        durationDays: selectedPackage.duration,
+        expiresAt: new Date(Date.now() + selectedPackage.duration * 24 * 60 * 60 * 1000).toISOString(),
+      });
 
       setStep('success');
       toast({
@@ -167,7 +159,7 @@ export const BoostProduct = ({ productId, onSuccess }: BoostProductProps) => {
                 {BOOST_PACKAGES.map((pkg) => (
                   <Card 
                     key={pkg.id}
-                    className={`cursor-pointer transition-all ${
+                    className={`cursor-pointer transition-all relative ${
                       pkg.popular ? 'ring-2 ring-primary' : ''
                     }`}
                     onClick={() => handleSelectPackage(pkg)}

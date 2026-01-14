@@ -25,13 +25,16 @@ export const PerformanceMonitor = () => {
     }
 
     // Measure TTFB (Time to First Byte)
-    const navigationTiming = performance.getEntriesByType('navigation')[0];
-    if (navigationTiming) {
-      metrics.ttfb = navigationTiming.responseStart - navigationTiming.fetchStart;
+    const navigationEntries = performance.getEntriesByType('navigation');
+    if (navigationEntries.length > 0) {
+      const navEntry = navigationEntries[0] as PerformanceNavigationTiming;
+      if (navEntry.responseStart && navEntry.fetchStart) {
+        metrics.ttfb = navEntry.responseStart - navEntry.fetchStart;
+      }
     }
 
     // Log metrics in development
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.log('Performance Metrics:', metrics);
     }
 
