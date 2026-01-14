@@ -8,7 +8,7 @@ import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CompareProvider } from "@/components/compare/CompareContext";
 import { CompareBar } from "@/components/compare/CompareBar";
-import { IncomingCallDialog } from "@/components/calls/IncomingCallDialog";
+import { IncomingCallDialogNew } from "@/components/calls/IncomingCallDialogNew";
 import { OfflineIndicator } from "@/components/layout/OfflineIndicator";
 import { PerformanceMonitor } from "@/components/common/PerformanceMonitor";
 import { useOnlineStatus } from "./hooks/useOnlineStatus";
@@ -52,7 +52,7 @@ const OnlineStatusTracker = () => {
 };
 
 const CallHandler = () => {
-  return <IncomingCallDialog />;
+  return <IncomingCallDialogNew />;
 };
 
 const App = () => (
