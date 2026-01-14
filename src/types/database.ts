@@ -65,6 +65,15 @@ export interface Favorite {
   created_at: string;
 }
 
+export interface CallSignaling {
+  id: string;
+  call_id: string;
+  sender_id: string;
+  type: 'offer' | 'answer' | 'ice-candidate' | 'call-ended';
+  payload: any;
+  created_at: string;
+}
+
 export interface Transaction {
   id: string;
   buyer_id: string;

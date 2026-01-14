@@ -1,1 +1,152 @@
-import { useEffect } from 'react';\nimport { useNavigate } from 'react-router-dom';\nimport { Dialog, DialogContent } from '@/components/ui/dialog';\nimport { Button } from '@/components/ui/button';\nimport { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';\nimport { Phone, PhoneOff, Video, Loader2 } from 'lucide-react';\nimport { useAuth } from '@/hooks/useAuth';\nimport { useIncomingCalls } from '@/hooks/useIncomingCalls';\nimport { useRingtone } from '@/hooks/useRingtone';\nimport { useToast } from '@/hooks/use-toast';\n\nexport const IncomingCallDialogNew = () => {\n  const { user } = useAuth();\n  const navigate = useNavigate();\n  const { toast } = useToast();\n  const { startRingtone, stopRingtone } = useRingtone();\n  const { incomingCall, isLoading, error, acceptCall, rejectCall } = useIncomingCalls(\n    user?.id || null\n  );\n\n  // Start ringtone when call arrives\n  useEffect(() => {\n    if (incomingCall && incomingCall.status === 'pending') {\n      startRingtone();\n    }\n  }, [incomingCall?.id, incomingCall?.status, startRingtone]);\n\n  // Stop ringtone when dialog closes\n  useEffect(() => {\n    return () => {\n      stopRingtone();\n    };\n  }, [stopRingtone]);\n\n  const handleAccept = async () => {\n    try {\n      stopRingtone();\n      await new Promise((resolve) => setTimeout(resolve, 100));\n      stopRingtone();\n\n      await acceptCall();\n\n      // Navigate to call page\n      if (incomingCall) {\n        navigate(\n          `/call/${incomingCall.caller_id}?callId=${incomingCall.id}&type=${incomingCall.call_type || 'voice'}`\n        );\n      }\n    } catch (err) {\n      console.error('Error accepting call:', err);\n      toast({\n        title: 'Erreur',\n        description: 'Impossible d\\'accepter l\\'appel',\n        variant: 'destructive',\n      });\n    }\n  };\n\n  const handleReject = async () => {\n    try {\n      stopRingtone();\n      await new Promise((resolve) => setTimeout(resolve, 100));\n      stopRingtone();\n\n      await rejectCall();\n    } catch (err) {\n      console.error('Error rejecting call:', err);\n      toast({\n        title: 'Erreur',\n        description: 'Impossible de refuser l\\'appel',\n        variant: 'destructive',\n      });\n    }\n  };\n\n  if (!incomingCall) return null;\n\n  const isOpen = incomingCall.status === 'pending';\n  const caller = incomingCall.caller;\n\n  return (\n    <Dialog open={isOpen} onOpenChange={(open) => !open && handleReject()}>\n      <DialogContent\n        className=\"sm:max-w-md\"\n        onPointerDownOutside={(e) => e.preventDefault()}\n      >\n        <div className=\"flex flex-col items-center py-6\">\n          {/* Caller Avatar */}\n          <div className=\"relative mb-6\">\n            <Avatar className=\"h-24 w-24 ring-4 ring-primary/20 animate-pulse\">\n              <AvatarImage src={caller?.avatar_url || ''} />\n              <AvatarFallback className=\"bg-primary text-primary-foreground text-3xl\">\n                {caller?.full_name?.charAt(0)?.toUpperCase() || '?'}\n              </AvatarFallback>\n            </Avatar>\n            <div className=\"absolute -bottom-2 -right-2 h-8 w-8 rounded-full bg-green-500 flex items-center justify-center animate-bounce\">\n              {incomingCall.call_type === 'video' ? (\n                <Video className=\"h-4 w-4 text-white\" />\n              ) : (\n                <Phone className=\"h-4 w-4 text-white\" />\n              )}\n            </div>\n          </div>\n\n          {/* Caller Name */}\n          <h2 className=\"font-display text-xl font-bold mb-1\">\n            {caller?.full_name || 'Utilisateur'}\n          </h2>\n\n          {/* Call Type */}\n          <p className=\"text-muted-foreground mb-8\">\n            {incomingCall.call_type === 'video' ? 'Appel vidéo entrant...' : 'Appel vocal entrant...'}\n          </p>\n\n          {/* Error Message */}\n          {error && (\n            <p className=\"text-sm text-red-500 mb-4\">{error.message}</p>\n          )}\n\n          {/* Action Buttons */}\n          <div className=\"flex items-center gap-6\">\n            <Button\n              variant=\"destructive\"\n              size=\"lg\"\n              className=\"h-16 w-16 rounded-full shadow-lg\"\n              onClick={handleReject}\n              disabled={isLoading}\n            >\n              {isLoading ? (\n                <Loader2 className=\"h-6 w-6 animate-spin\" />\n              ) : (\n                <PhoneOff className=\"h-6 w-6\" />\n              )}\n            </Button>\n            <Button\n              size=\"lg\"\n              className=\"h-16 w-16 rounded-full bg-green-500 hover:bg-green-600 shadow-lg\"\n              onClick={handleAccept}\n              disabled={isLoading}\n            >\n              {isLoading ? (\n                <Loader2 className=\"h-6 w-6 animate-spin\" />\n              ) : (\n                <Phone className=\"h-6 w-6\" />\n              )}\n            </Button>\n          </div>\n        </div>\n      </DialogContent>\n    </Dialog>\n  );\n};\n
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Phone, PhoneOff, Video, Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useIncomingCalls } from '@/hooks/useIncomingCalls';
+import { useRingtone } from '@/hooks/useRingtone';
+import { useToast } from '@/hooks/use-toast';
+
+export const IncomingCallDialogNew = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { startRingtone, stopRingtone } = useRingtone();
+  const { incomingCall, isLoading, error, acceptCall, rejectCall } = useIncomingCalls(
+    user?.id || null
+  );
+
+  // Start ringtone when call arrives
+  useEffect(() => {
+    if (incomingCall && incomingCall.status === 'pending') {
+      startRingtone();
+    }
+  }, [incomingCall?.id, incomingCall?.status, startRingtone]);
+
+  // Stop ringtone when dialog closes
+  useEffect(() => {
+    return () => {
+      stopRingtone();
+    };
+  }, [stopRingtone]);
+
+  const handleAccept = async () => {
+    try {
+      stopRingtone();
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      stopRingtone();
+
+      await acceptCall();
+
+      // Navigate to call page
+      if (incomingCall) {
+        navigate(
+          `/call/${incomingCall.caller_id}?callId=${incomingCall.id}&type=${incomingCall.call_type || 'voice'}`
+        );
+      }
+    } catch (err) {
+      console.error('Error accepting call:', err);
+      toast({
+        title: 'Erreur',
+        description: "Impossible d'accepter l'appel",
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleReject = async () => {
+    try {
+      stopRingtone();
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      stopRingtone();
+
+      await rejectCall();
+    } catch (err) {
+      console.error('Error rejecting call:', err);
+      toast({
+        title: 'Erreur',
+        description: "Impossible de refuser l'appel",
+        variant: 'destructive',
+      });
+    }
+  };
+
+  if (!incomingCall) return null;
+
+  const isOpen = incomingCall.status === 'pending';
+  const caller = incomingCall.caller;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleReject()}>
+      <DialogContent
+        className="sm:max-w-md"
+        onPointerDownOutside={(e) => e.preventDefault()}
+      >
+        <div className="flex flex-col items-center py-6">
+          {/* Caller Avatar */}
+          <div className="relative mb-6">
+            <Avatar className="h-24 w-24 ring-4 ring-primary/20 animate-pulse">
+              <AvatarImage src={caller?.avatar_url || ''} />
+              <AvatarFallback className="bg-primary text-primary-foreground text-3xl">
+                {caller?.full_name?.charAt(0)?.toUpperCase() || '?'}
+              </AvatarFallback>
+            </Avatar>
+            <div className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full bg-green-500 flex items-center justify-center animate-bounce">
+              {incomingCall.call_type === 'video' ? (
+                <Video className="h-4 w-4 text-white" />
+              ) : (
+                <Phone className="h-4 w-4 text-white" />
+              )}
+            </div>
+          </div>
+
+          {/* Caller Name */}
+          <h2 className="font-display text-xl font-bold mb-1">
+            {caller?.full_name || 'Utilisateur'}
+          </h2>
+
+          {/* Call Type */}
+          <p className="text-muted-foreground mb-8">
+            {incomingCall.call_type === 'video' ? 'Appel vidéo entrant...' : 'Appel vocal entrant...'}
+          </p>
+
+          {/* Error Message */}
+          {error && (
+            <p className="text-sm text-red-500 mb-4">{error.message}</p>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-6">
+            <Button
+              variant="destructive"
+              size="lg"
+              className="h-16 w-16 rounded-full shadow-lg"
+              onClick={handleReject}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : (
+                <PhoneOff className="h-6 w-6" />
+              )}
+            </Button>
+            <Button
+              size="lg"
+              className="h-16 w-16 rounded-full bg-green-500 hover:bg-green-600 shadow-lg"
+              onClick={handleAccept}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : (
+                <Phone className="h-6 w-6" />
+              )}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};

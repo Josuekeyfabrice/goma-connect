@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, CheckCircle2, AlertCircle, Phone } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface MobileMoneyPaymentProps {
@@ -240,20 +239,16 @@ async function simulateMobileMoneyPayment({
   if (success) {
     const transactionId = `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
-    // Log to Supabase for record keeping
-    try {
-      await supabase.from('mobile_money_transactions').insert({
-        transaction_id: transactionId,
-        provider,
-        phone_number: phoneNumber,
-        amount,
-        description,
-        status: 'completed',
-        created_at: new Date().toISOString(),
-      });
-    } catch (error) {
-      console.error('Error logging transaction:', error);
-    }
+    // Log transaction locally (in production, this would be saved to the database)
+    console.log('Mobile Money Transaction:', {
+      transactionId,
+      provider,
+      phoneNumber,
+      amount,
+      description,
+      status: 'completed',
+      createdAt: new Date().toISOString(),
+    });
 
     return { success: true, transactionId };
   } else {

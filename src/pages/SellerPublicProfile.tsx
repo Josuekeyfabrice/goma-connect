@@ -81,20 +81,12 @@ const SellerPublicProfile = () => {
 
         if (reviewsError) throw reviewsError;
 
-        const { data: salesData, error: salesError } = await supabase
-          .from('transactions')
-          .select('*')
-          .eq('seller_id', sellerId)
-          .eq('status', 'completed');
-
-        if (salesError) throw salesError;
-
         const avgRating = reviews && reviews.length > 0
           ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length)
           : 0;
 
         setStats({
-          totalSales: salesData?.length || 0,
+          totalSales: 0, // Will be populated when transactions table exists
           averageRating: avgRating,
           totalReviews: reviews?.length || 0,
           followers: Math.floor(Math.random() * 500) + 10, // Simulated
