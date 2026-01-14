@@ -87,8 +87,8 @@ const Call = () => {
         }
         pendingCandidatesRef.current = [];
         
-        if (pc.signalingState === 'closed') {
-          console.error('Cannot create answer: PeerConnection is closed');
+        if (pc.signalingState !== 'have-remote-offer') {
+          console.error('Cannot create answer: unexpected state', pc.signalingState);
           return;
         }
         
