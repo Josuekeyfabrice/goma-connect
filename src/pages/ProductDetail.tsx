@@ -78,18 +78,27 @@ const ProductDetail = () => {
 
   const incrementViews = async () => {
     if (!id) return;
-    // Increment views directly
-    const { data: product } = await supabase
-      .from('products')
-      .select('views_count')
-      .eq('id', id)
-      .single();
-    
-    if (product) {
-      await supabase
-        .from('products')
-        .update({ views_count: (product.views_count || 0) + 1 })
-        .eq('id', id);
+    try {
+      // Increment views count in Supabase
+      const { error } = await supabase.rpc('increment_product_views', { product_id: id });
+      
+      if (error) {
+        // Fallback if RPC is not available
+        const { data: currentProduct } = await supabase
+          .from('products')
+          .select('views_count')
+          .eq('id', id)
+          .single();
+        
+        if (currentProduct) {
+          await supabase
+            .from('products')
+            .update({ views_count: (currentProduct.views_count || 0) + 1 })
+            .eq('id', id);
+        }
+      }
+    } catch (err) {
+      console.error('Error incrementing views:', err);
     }
   };
 

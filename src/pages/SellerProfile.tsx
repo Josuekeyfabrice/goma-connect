@@ -29,8 +29,10 @@ const SellerProfile = () => {
     totalViews: 0,
     averageRating: 0,
     totalReviews: 0,
+    followersCount: 0,
   });
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [isFollowing, setIsFollowing] = useState(false);
 
   useEffect(() => {
     if (sellerId) {
@@ -82,11 +84,29 @@ const SellerProfile = () => {
         ? Math.round((reviewsData?.reduce((sum, r) => sum + r.rating, 0) || 0) / totalReviews * 10) / 10
         : 0;
 
+      // Fetch followers count
+      const { count: followersCount } = await supabase
+        .from('followers')
+        .select('*', { count: 'exact', head: true })
+        .eq('seller_id', sellerId);
+
+      // Check if current user is following
+      if (user) {
+        const { data: followData } = await supabase
+          .from('followers')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('seller_id', sellerId)
+          .single();
+        setIsFollowing(!!followData);
+      }
+
       setStats({
         totalProducts: productsData?.length || 0,
         totalViews,
         averageRating,
         totalReviews,
+        followersCount: followersCount || 0,
       });
     } catch (error) {
       console.error('Error fetching seller data:', error);
@@ -121,6 +141,29 @@ const SellerProfile = () => {
     } else {
       await supabase.from('favorites').insert({ user_id: user.id, product_id: productId });
       setFavorites(prev => new Set(prev).add(productId));
+    }
+  };
+
+  const handleFollow = async () => {
+    if (!user) return;
+    try {
+      if (isFollowing) {
+        await supabase
+          .from('followers')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('seller_id', sellerId);
+        setIsFollowing(false);
+        setStats(prev => ({ ...prev, followersCount: prev.followersCount - 1 }));
+      } else {
+        await supabase
+          .from('followers')
+          .insert({ user_id: user.id, seller_id: sellerId });
+        setIsFollowing(true);
+        setStats(prev => ({ ...prev, followersCount: prev.followersCount + 1 }));
+      }
+    } catch (error) {
+      console.error('Error toggling follow:', error);
     }
   };
 
@@ -210,10 +253,18 @@ const SellerProfile = () => {
                 </div>
               </div>
 
-              {/* Contact Buttons */}
+              {/* Contact & Follow Buttons */}
               {user?.id !== sellerId && (
-                <div className="flex gap-2">
-                  <Button asChild>
+                <div className="flex flex-wrap gap-2">
+                  <Button 
+                    variant={isFollowing ? "outline" : "default"}
+                    onClick={handleFollow}
+                    className="gap-2"
+                  >
+                    <Star className={`h-4 w-4 ${isFollowing ? 'fill-primary text-primary' : ''}`} />
+                    {isFollowing ? 'Suivi' : 'Suivre'}
+                  </Button>
+                  <Button asChild variant="secondary">
                     <Link to={`/messages?to=${sellerId}`} className="gap-2">
                       <MessageCircle className="h-4 w-4" />
                       Message
@@ -256,9 +307,9 @@ const SellerProfile = () => {
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
-              <MessageCircle className="h-8 w-8 mx-auto text-primary mb-2" />
-              <div className="text-2xl font-bold">{stats.totalReviews}</div>
-              <div className="text-sm text-muted-foreground">Avis</div>
+              <User className="h-8 w-8 mx-auto text-primary mb-2" />
+              <div className="text-2xl font-bold">{stats.followersCount}</div>
+              <div className="text-sm text-muted-foreground">Abonnés</div>
             </CardContent>
           </Card>
         </div>

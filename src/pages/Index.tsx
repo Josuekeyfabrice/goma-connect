@@ -3,6 +3,7 @@ import { Footer } from '@/components/layout/Footer';
 import { Hero } from '@/components/home/Hero';
 import { FeaturedProducts } from '@/components/home/FeaturedProducts';
 import { CategoryGrid } from '@/components/home/CategoryGrid';
+import { TrendingProducts } from '@/components/home/TrendingProducts';
 
 const Index = () => {
   return (
@@ -11,6 +12,7 @@ const Index = () => {
       <main className="flex-1">
         <Hero />
         <CategoryGrid />
+        <TrendingProducts />
         <FeaturedProducts />
       </main>
       <Footer />
