@@ -16,6 +16,7 @@ import { SellerReviews } from '@/components/reviews/SellerReviews';
 import { ReportDialog } from '@/components/reports/ReportDialog';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import ProductLocationMap from '@/components/maps/ProductLocationMap';
+import { BoostDialog } from '@/components/products/BoostDialog';
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -449,28 +450,32 @@ const ProductDetail = () => {
               </CardContent>
             </Card>
 
-            {/* Contact Buttons */}
-            {user?.id !== product.seller_id && (
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button
-                  className="flex-1 gap-2"
-                  size="lg"
-                  onClick={handleCall}
-                >
-                  <Phone className="h-5 w-5" />
-                  Appeler
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 gap-2"
-                  size="lg"
-                  onClick={handleMessage}
-                >
-                  <MessageCircle className="h-5 w-5" />
-                  Message
-                </Button>
-              </div>
-            )}
+            {/* Action Buttons */}
+            <div className="space-y-3">
+              {user?.id === product.seller_id ? (
+                <BoostDialog productId={product.id} productName={product.name} />
+              ) : (
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button
+                    className="flex-1 gap-2"
+                    size="lg"
+                    onClick={handleCall}
+                  >
+                    <Phone className="h-4 w-4" />
+                    Appeler
+                  </Button>
+                  <Button
+                    className="flex-1 gap-2"
+                    variant="secondary"
+                    size="lg"
+                    onClick={handleMessage}
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    Message
+                  </Button>
+                </div>
+              )}
+            </div>
 
             {/* Phone number */}
             {product.phone && (
