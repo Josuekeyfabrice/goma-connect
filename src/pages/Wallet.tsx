@@ -13,20 +13,50 @@ import {
   CreditCard, 
   Smartphone,
   CheckCircle2,
-  Clock
+  Clock,
+  AlertCircle
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 
 const Wallet = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [balance, setBalance] = useState(0);
+  const [isRechargeOpen, setIsRechargeOpen] = useState(false);
+  const [rechargeAmount, setRechargeAmount] = useState("5");
+  const [isLoading, setIsLoading] = useState(false);
+  
   const [transactions, setTransactions] = useState([
     { id: 1, type: 'recharge', amount: 10, date: '2026-01-15', status: 'completed', method: 'M-Pesa' },
     { id: 2, type: 'payment', amount: -2, date: '2026-01-14', status: 'completed', description: 'Boost Annonce' },
     { id: 3, type: 'payment', amount: -1, date: '2026-01-14', status: 'completed', description: 'Pass TV Journalier' },
   ]);
+
+  const handleRecharge = async () => {
+    setIsLoading(true);
+    // Simulation de l'appel PawaPay avec le jeton fourni
+    setTimeout(() => {
+      setIsLoading(false);
+      setIsRechargeOpen(false);
+      toast({
+        title: "Demande de paiement envoyée",
+        description: `Veuillez confirmer le paiement de ${rechargeAmount}$ sur votre téléphone.`,
+      });
+    }, 1500);
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -41,9 +71,72 @@ const Wallet = () => {
               </h1>
               <p className="text-muted-foreground mt-1">Gérez votre solde et vos transactions GOMACASCADE.</p>
             </div>
-            <Button className="gradient-primary rounded-xl gap-2 font-bold">
-              <Plus className="h-5 w-5" /> Recharge
-            </Button>
+            
+            <Dialog open={isRechargeOpen} onOpenChange={setIsRechargeOpen}>
+              <DialogTrigger asChild>
+                <Button className="gradient-primary rounded-xl gap-2 font-bold shadow-lg hover:scale-105 transition-transform">
+                  <Plus className="h-5 w-5" /> Recharge
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px] rounded-[2rem]">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-black font-display">Recharger mon compte</DialogTitle>
+                  <DialogDescription>
+                    Choisissez le montant à ajouter à votre portefeuille GOMACASCADE.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-6 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="amount" className="font-bold">Montant (USD)</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">$</span>
+                      <Input
+                        id="amount"
+                        type="number"
+                        value={rechargeAmount}
+                        onChange={(e) => setRechargeAmount(e.target.value)}
+                        className="pl-8 rounded-xl border-2 focus:border-primary"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {["5", "10", "20"].map((amt) => (
+                      <Button 
+                        key={amt}
+                        variant={rechargeAmount === amt ? "default" : "outline"}
+                        onClick={() => setRechargeAmount(amt)}
+                        className="rounded-xl font-bold"
+                      >
+                        ${amt}
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="space-y-3">
+                    <p className="text-sm font-bold text-muted-foreground">Méthode de paiement sécurisée</p>
+                    <div className="flex items-center gap-3 p-3 border-2 border-primary/20 rounded-2xl bg-primary/5">
+                      <div className="h-10 w-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                        <Smartphone className="h-6 w-6 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold">PawaPay (Mobile Money)</p>
+                        <p className="text-[10px] text-muted-foreground">M-Pesa, Airtel, Orange</p>
+                      </div>
+                      <CheckCircle2 className="h-5 w-5 text-primary" />
+                    </div>
+                  </div>
+                </div>
+                <Button 
+                  onClick={handleRecharge} 
+                  disabled={isLoading}
+                  className="w-full gradient-primary h-12 rounded-xl font-bold text-lg"
+                >
+                  {isLoading ? "Traitement..." : `Payer ${rechargeAmount}$ maintenant`}
+                </Button>
+                <p className="text-[10px] text-center text-muted-foreground flex items-center justify-center gap-1">
+                  <AlertCircle className="h-3 w-3" /> Paiement sécurisé par PawaPay
+                </p>
+              </DialogContent>
+            </Dialog>
           </div>
 
           {/* Balance Card */}
