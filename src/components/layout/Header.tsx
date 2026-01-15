@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Search, Heart, MessageCircle, User, Plus, LogOut, Phone, Shield, Download, ShieldCheck } from 'lucide-react';
+import { Menu, X, Search, Heart, MessageCircle, User, Plus, LogOut, Phone, Shield, Download, ShieldCheck, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNotificationCounts } from '@/hooks/useNotificationCounts';
 import { supabase } from '@/integrations/supabase/client';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+import { DataSaverToggle } from '@/components/ui/DataSaverToggle';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -141,6 +143,7 @@ export const Header = () => {
                     )}
                   </Link>
                 </Button>
+                <NotificationCenter />
                 <Button className="gap-2 gradient-primary text-primary-foreground" asChild>
                   <Link to="/sell">
                     <Plus className="h-4 w-4" />
@@ -163,6 +166,12 @@ export const Header = () => {
                       <Link to="/profile" className="cursor-pointer">
                         <User className="mr-2 h-4 w-4" />
                         Mon Profil
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/wallet" className="cursor-pointer">
+                        <Wallet className="mr-2 h-4 w-4" />
+                        Mon Portefeuille
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
@@ -241,8 +250,11 @@ export const Header = () => {
         <div className="border-t bg-background md:hidden animate-fade-in">
           <nav className="container mx-auto flex flex-col gap-2 p-4">
             <div className="flex items-center justify-between py-2 px-3 rounded-md">
-              <span className="text-sm font-medium">Mode</span>
+              <span className="text-sm font-medium">Mode Sombre</span>
               <ThemeToggle />
+            </div>
+            <div className="px-3 py-2">
+              <DataSaverToggle />
             </div>
             {showInstallBtn && (
               <Button variant="outline" className="justify-start text-primary" onClick={handleInstall}>
@@ -273,6 +285,12 @@ export const Header = () => {
                   <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
                     <User className="mr-2 h-5 w-5" />
                     Mon Profil
+                  </Link>
+                </Button>
+                <Button variant="ghost" className="justify-start" asChild>
+                  <Link to="/wallet" onClick={() => setIsMenuOpen(false)}>
+                    <Wallet className="mr-2 h-5 w-5" />
+                    Mon Portefeuille
                   </Link>
                 </Button>
                 <Button variant="ghost" className="justify-start text-primary font-semibold" asChild>

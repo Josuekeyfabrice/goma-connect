@@ -34,6 +34,7 @@ const Compare = lazy(() => import("./pages/Compare"));
 const Install = lazy(() => import("./pages/Install"));
 const LiveTV = lazy(() => import("./pages/LiveTV"));
 const VerifySeller = lazy(() => import("./pages/VerifySeller"));
+const Wallet = lazy(() => import("./pages/Wallet"));
 const Transactions = lazy(() => import("./pages/Transactions"));
 const ProximityMap = lazy(() => import("./pages/ProximityMap"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
@@ -98,6 +99,7 @@ const App = () => (
                   <Route path="/install" element={<Install />} />
                   <Route path="/live-tv" element={<LiveTV />} />
                   <Route path="/verify-seller" element={<VerifySeller />} />
+                  <Route path="/wallet" element={<Wallet />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
