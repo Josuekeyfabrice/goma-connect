@@ -52,10 +52,14 @@ const LiveTV = () => {
 
   const channels = [
     { id: 1, name: "France 24", category: "Infos", url: "https://static.france24.com/live/F24_FR_HI_HLS/live_tv.m3u8", color: "bg-blue-600", isYoutube: false },
-    { id: 2, name: "Euronews", category: "Infos", url: "https://euronews-euronews-french-3-fr.samsung.wurl.com/manifest/playlist.m3u8", color: "bg-blue-800", isYoutube: false },
+    { id: 2, name: "Africa 24", category: "Infos", url: "https://africa24.vedge.infomaniak.com/livecast/ik:africa24/manifest.m3u8", color: "bg-yellow-600", isYoutube: false },
     { id: 3, name: "TV5 Monde Info", category: "Infos", url: "https://ott.tv5monde.com/Content/HLS/Live/channel(info)/index.m3u8", color: "bg-red-600", isYoutube: false },
-    { id: 4, name: "Africa 24", category: "Infos", url: "https://www.youtube.com/embed/live_stream?channel=UCOmv56D_O_69-E-6m2_v_f3p", color: "bg-yellow-600", isYoutube: true },
-    { id: 5, name: "Al Jazeera", category: "Infos", url: "https://www.youtube.com/embed/gCNeDWCI0vo?autoplay=1", color: "bg-orange-600", isYoutube: true },
+    { id: 4, name: "Euronews FR", category: "Infos", url: "https://cdn-euronews.akamaized.net/live/eds/africanews-fr/25050/index.m3u8", color: "bg-blue-800", isYoutube: false },
+    { id: 5, name: "Africa 24 Sport", category: "Sports", url: "https://africa24.vedge.infomaniak.com/livecast/ik:africa24sport/manifest.m3u8", color: "bg-green-600", isYoutube: false },
+    { id: 6, name: "Abu Dhabi Sports 1", category: "Sports", url: "https://admn-live-cdn-lb.starzplayarabia.com/out/v1/admn_tv_enc/abudhabi_sports_1/abudhabi_sports_1_hls_nd/index.m3u8", color: "bg-red-700", isYoutube: false },
+    { id: 7, name: "Afrobeats TV", category: "Musique", url: "https://stream.ecable.tv/afrobeats/index.m3u8", color: "bg-purple-600", isYoutube: false },
+    { id: 8, name: "A2i Music", category: "Musique", url: "https://stream.sen-gt.com/A2iMusic/myStream/playlist.m3u8", color: "bg-pink-600", isYoutube: false },
+    { id: 9, name: "Al Jazeera", category: "Infos", url: "https://www.youtube.com/embed/gCNeDWCI0vo?autoplay=1", color: "bg-orange-600", isYoutube: true },
   ];
 
   const [currentChannel, setCurrentChannel] = useState(channels[0]);
