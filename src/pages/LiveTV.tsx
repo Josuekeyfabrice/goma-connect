@@ -51,11 +51,11 @@ const LiveTV = () => {
   const [episode, setEpisode] = useState(1);
 
   const channels = [
-    { id: 1, name: "France 24", category: "Infos", url: "https://static.france24.com/live/F24_FR_HI_HLS/live_tv.m3u8", color: "bg-blue-600" },
-    { id: 2, name: "Euronews", category: "Infos", url: "https://euronews-euronews-french-3-fr.samsung.wurl.com/manifest/playlist.m3u8", color: "bg-blue-800" },
-    { id: 3, name: "Africa 24", category: "Infos", url: "https://africa24.akamaized.net/hls/live/2033941/africa24/master.m3u8", color: "bg-yellow-600" },
-    { id: 4, name: "TV5 Monde Info", category: "Infos", url: "https://ott.tv5monde.com/Content/HLS/Live/channel(info)/index.m3u8", color: "bg-red-600" },
-    { id: 5, name: "RTBF Auvio", category: "Divertissement", url: "https://rtbf-live-3.p-p.rtbf.be/live/rtbf/index.m3u8", color: "bg-purple-600" },
+    { id: 1, name: "France 24", category: "Infos", url: "https://www.youtube.com/embed/wwNQsk7igpQ?autoplay=1", color: "bg-blue-600", isYoutube: true },
+    { id: 2, name: "Euronews", category: "Infos", url: "https://www.youtube.com/embed/PY_N1XS_m9E?autoplay=1", color: "bg-blue-800", isYoutube: true },
+    { id: 3, name: "Africa 24", category: "Infos", url: "https://www.youtube.com/embed/live_stream?channel=UCOmv56D_O_69-E-6m2_v_f3p", color: "bg-yellow-600", isYoutube: true },
+    { id: 4, name: "TV5 Monde", category: "Infos", url: "https://www.youtube.com/embed/live_stream?channel=UCv_f3p8f_v7m6z_Y_Xv_f3p", color: "bg-red-600", isYoutube: true },
+    { id: 5, name: "Al Jazeera", category: "Infos", url: "https://www.youtube.com/embed/gCNeDWCI0vo?autoplay=1", color: "bg-orange-600", isYoutube: true },
   ];
 
   const [currentChannel, setCurrentChannel] = useState(channels[0]);
@@ -163,25 +163,28 @@ const LiveTV = () => {
             </div>
           ) : (
             <>
-              {playerUrl ? (
+              {playerUrl || currentChannel.isYoutube ? (
                 <div className="relative w-full h-full">
                   <iframe 
-                    src={playerUrl}
+                    src={playerUrl || currentChannel.url}
                     className="w-full h-full border-none"
                     allowFullScreen
+                    allow="autoplay; encrypted-media"
                     title="Video Player"
                   ></iframe>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="absolute top-4 right-4 bg-black/50 hover:bg-red-600 text-white rounded-full z-20"
-                    onClick={() => {
-                      setPlayerUrl(null);
-                      setSelectedMedia(null);
-                    }}
-                  >
-                    <X className="h-6 w-6" />
-                  </Button>
+                  {playerUrl && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="absolute top-4 right-4 bg-black/50 hover:bg-red-600 text-white rounded-full z-20"
+                      onClick={() => {
+                        setPlayerUrl(null);
+                        setSelectedMedia(null);
+                      }}
+                    >
+                      <X className="h-6 w-6" />
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <div className="relative w-full h-full">
