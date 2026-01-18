@@ -51,10 +51,10 @@ const LiveTV = () => {
   const [episode, setEpisode] = useState(1);
 
   const channels = [
-    { id: 1, name: "France 24", category: "Infos", url: "https://www.youtube.com/embed/wwNQsk7igpQ?autoplay=1", color: "bg-blue-600", isYoutube: true },
-    { id: 2, name: "Euronews", category: "Infos", url: "https://www.youtube.com/embed/PY_N1XS_m9E?autoplay=1", color: "bg-blue-800", isYoutube: true },
-    { id: 3, name: "Africa 24", category: "Infos", url: "https://www.youtube.com/embed/live_stream?channel=UCOmv56D_O_69-E-6m2_v_f3p", color: "bg-yellow-600", isYoutube: true },
-    { id: 4, name: "TV5 Monde", category: "Infos", url: "https://www.youtube.com/embed/live_stream?channel=UCv_f3p8f_v7m6z_Y_Xv_f3p", color: "bg-red-600", isYoutube: true },
+    { id: 1, name: "France 24", category: "Infos", url: "https://static.france24.com/live/F24_FR_HI_HLS/live_tv.m3u8", color: "bg-blue-600", isYoutube: false },
+    { id: 2, name: "Euronews", category: "Infos", url: "https://euronews-euronews-french-3-fr.samsung.wurl.com/manifest/playlist.m3u8", color: "bg-blue-800", isYoutube: false },
+    { id: 3, name: "TV5 Monde Info", category: "Infos", url: "https://ott.tv5monde.com/Content/HLS/Live/channel(info)/index.m3u8", color: "bg-red-600", isYoutube: false },
+    { id: 4, name: "Africa 24", category: "Infos", url: "https://www.youtube.com/embed/live_stream?channel=UCOmv56D_O_69-E-6m2_v_f3p", color: "bg-yellow-600", isYoutube: true },
     { id: 5, name: "Al Jazeera", category: "Infos", url: "https://www.youtube.com/embed/gCNeDWCI0vo?autoplay=1", color: "bg-orange-600", isYoutube: true },
   ];
 

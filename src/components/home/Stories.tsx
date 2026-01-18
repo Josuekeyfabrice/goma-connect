@@ -2,10 +2,6 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Zap, X, ShoppingCart, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-} from '@/components/ui/dialog';
 
 const mockStories = [
   { 
@@ -50,49 +46,55 @@ export const Stories = () => {
   const [selectedStory, setSelectedStory] = useState<any>(null);
 
   return (
-    <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide px-2">
-      {/* Add Story Button */}
-      <motion.div 
-        whileHover={{ scale: 1.05 }}
-        className="flex-none flex flex-col items-center gap-2 cursor-pointer"
-      >
-        <div className="relative h-20 w-20 rounded-full bg-white/5 border-2 border-dashed border-gray-600 flex items-center justify-center group hover:border-primary transition-colors">
-          <Plus className="h-8 w-8 text-gray-400 group-hover:text-primary" />
-          <div className="absolute -bottom-1 -right-1 bg-primary rounded-full p-1 border-2 border-[#0a0a0a]">
-            <Zap className="h-3 w-3 text-white fill-current" />
-          </div>
-        </div>
-        <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">Ma Story</span>
-      </motion.div>
-
-      {/* Mock Stories */}
-      {mockStories.map((story) => (
-        <motion.div 
-          key={story.id}
-          whileHover={{ scale: 1.05 }}
-          onClick={() => setSelectedStory(story)}
-          className="flex-none flex flex-col items-center gap-2 cursor-pointer"
-        >
-          <div className={`h-20 w-20 rounded-full p-1 border-2 ${story.isLive ? 'border-primary animate-pulse' : 'border-gray-700'}`}>
-            <div className="h-full w-full rounded-full overflow-hidden border-2 border-[#0a0a0a]">
-              <img 
-                src={story.image} 
-                alt={story.user} 
-                className="h-full w-full object-cover"
-              />
+    <div className="relative">
+      <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide px-2">
+        {/* Add Story Button */}
+        <div className="flex-none flex flex-col items-center gap-2 cursor-pointer">
+          <div className="relative h-20 w-20 rounded-full bg-white/5 border-2 border-dashed border-gray-600 flex items-center justify-center group hover:border-primary transition-colors">
+            <Plus className="h-8 w-8 text-gray-400 group-hover:text-primary" />
+            <div className="absolute -bottom-1 -right-1 bg-primary rounded-full p-1 border-2 border-[#0a0a0a]">
+              <Zap className="h-3 w-3 text-white fill-current" />
             </div>
           </div>
-          <span className="text-[10px] font-black text-white uppercase tracking-tighter line-clamp-1 w-20 text-center">
-            {story.user}
-          </span>
-        </motion.div>
-      ))}
+          <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">Ma Story</span>
+        </div>
 
-      {/* Story Viewer Dialog */}
-      <Dialog open={!!selectedStory} onOpenChange={() => setSelectedStory(null)}>
-        <DialogContent className="sm:max-w-[450px] p-0 bg-black border-none overflow-hidden aspect-[9/16] rounded-[2rem]">
-          {selectedStory && (
-            <div className="relative h-full w-full">
+        {/* Mock Stories */}
+        {mockStories.map((story) => (
+          <div 
+            key={story.id}
+            onClick={() => {
+              console.log("Story clicked:", story.user);
+              setSelectedStory(story);
+            }}
+            className="flex-none flex flex-col items-center gap-2 cursor-pointer"
+          >
+            <div className={`h-20 w-20 rounded-full p-1 border-2 ${story.isLive ? 'border-primary animate-pulse' : 'border-gray-700'}`}>
+              <div className="h-full w-full rounded-full overflow-hidden border-2 border-[#0a0a0a]">
+                <img 
+                  src={story.image} 
+                  alt={story.user} 
+                  className="h-full w-full object-cover"
+                />
+              </div>
+            </div>
+            <span className="text-[10px] font-black text-white uppercase tracking-tighter line-clamp-1 w-20 text-center">
+              {story.user}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Full Screen Story Viewer - Custom Implementation for better reliability */}
+      <AnimatePresence>
+        {selectedStory && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black p-0 sm:p-4"
+          >
+            <div className="relative h-full w-full max-w-[450px] bg-black overflow-hidden aspect-[9/16] sm:rounded-[2rem] shadow-2xl">
               {/* Progress Bar */}
               <div className="absolute top-4 left-4 right-4 z-50 flex gap-1">
                 <div className="h-1 flex-1 bg-white/30 rounded-full overflow-hidden">
@@ -114,17 +116,18 @@ export const Stories = () => {
                   </div>
                   <div>
                     <p className="text-white font-black text-sm">{selectedStory.user}</p>
-                    <p className="text-white/60 text-[10px] font-bold">IL Y A 2H</p>
+                    <p className="text-white/60 text-[10px] font-bold uppercase">En direct de Goma</p>
                   </div>
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="text-white hover:bg-white/10 rounded-full"
-                  onClick={() => setSelectedStory(null)}
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedStory(null);
+                  }}
+                  className="p-2 text-white hover:bg-white/10 rounded-full transition-colors"
                 >
-                  <X className="h-6 w-6" />
-                </Button>
+                  <X className="h-8 w-8" />
+                </button>
               </div>
 
               {/* Main Image */}
@@ -135,29 +138,29 @@ export const Stories = () => {
               />
 
               {/* Footer / Action */}
-              <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 to-transparent pt-20">
+              <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/95 via-black/60 to-transparent pt-32">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h3 className="text-white font-black text-xl">{selectedStory.productName}</h3>
-                    <p className="text-primary font-black text-2xl">{selectedStory.price}</p>
+                    <h3 className="text-white font-black text-2xl tracking-tighter">{selectedStory.productName}</h3>
+                    <p className="text-primary font-black text-3xl">{selectedStory.price}</p>
                   </div>
-                  <Badge className="bg-primary text-white border-none px-4 py-1 font-black">
+                  <div className="bg-primary text-white px-4 py-1.5 rounded-full font-black text-xs animate-pulse">
                     VENTE FLASH
-                  </Badge>
+                  </div>
                 </div>
                 <div className="flex gap-3">
-                  <Button className="flex-1 gradient-primary h-14 rounded-2xl font-black gap-2">
-                    <ShoppingCart className="h-5 w-5" /> Acheter
+                  <Button className="flex-1 gradient-primary h-16 rounded-2xl font-black text-lg gap-2 shadow-lg shadow-primary/20">
+                    <ShoppingCart className="h-6 w-6" /> Acheter
                   </Button>
-                  <Button variant="outline" className="h-14 w-14 rounded-2xl border-white/20 bg-white/5 text-white">
-                    <MessageCircle className="h-6 w-6" />
+                  <Button variant="outline" className="h-16 w-16 rounded-2xl border-white/20 bg-white/5 text-white hover:bg-white/10">
+                    <MessageCircle className="h-7 w-7" />
                   </Button>
                 </div>
               </div>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
