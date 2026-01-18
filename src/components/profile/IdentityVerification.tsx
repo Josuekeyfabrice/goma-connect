@@ -45,6 +45,8 @@ export const IdentityVerification = () => {
     }
   };
 
+  const { profile, refreshProfile } = useProfile();
+
   const handleSelfie = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
@@ -55,6 +57,9 @@ export const IdentityVerification = () => {
       const result = await processVerification(user.id);
       
       if (result.success) {
+        // Force profile refresh to update UI immediately
+        if (refreshProfile) await refreshProfile();
+        
         setStep('success');
         toast({
           title: "Vérification réussie",
@@ -78,7 +83,6 @@ export const IdentityVerification = () => {
     }
   };
 
-  const { profile } = useProfile();
   const isAlreadyVerified = profile?.is_verified;
 
   return (

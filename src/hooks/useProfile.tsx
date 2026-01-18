@@ -16,17 +16,25 @@ export const useProfile = () => {
     }
 
     const fetchProfile = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
 
-      if (!error && data) {
-        setProfile(data as Profile);
-      }
+    if (!error && data) {
+      setProfile(data as Profile);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (!user) {
+      setProfile(null);
       setLoading(false);
-    };
+      return;
+    }
 
     fetchProfile();
 
@@ -77,5 +85,5 @@ export const useProfile = () => {
       .eq('user_id', user.id);
   };
 
-  return { profile, loading, updateProfile, updateOnlineStatus };
+  return { profile, loading, updateProfile, updateOnlineStatus, refreshProfile: fetchProfile };
 };

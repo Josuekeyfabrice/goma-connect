@@ -26,8 +26,42 @@ export const useIncomingCalls = (userId: string | null): UseIncomingCallsReturn 
   useEffect(() => {
     if (!userId) return;
 
+    const handleNewCall = async (call: CallType) => {
+      if (!isMountedRef.current) return;
+      try {
+        const { data: callerProfile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', call.caller_id)
+          .single();
+
+        if (profileError) throw profileError;
+
+        if (isMountedRef.current) {
+          setIncomingCall({
+            ...call,
+            caller: callerProfile,
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching caller profile:', err);
+        if (isMountedRef.current) {
+          setIncomingCall(call as IncomingCall);
+        }
+      }
+    };
+
     const channel = supabase
       .channel(`incoming-calls-${userId}`)
+      .on(
+        'broadcast',
+        { event: 'new-call' },
+        ({ payload }) => {
+          if (payload.receiver_id === userId) {
+            handleNewCall(payload);
+          }
+        }
+      )
       .on(
         'postgres_changes',
         {
@@ -36,34 +70,7 @@ export const useIncomingCalls = (userId: string | null): UseIncomingCallsReturn 
           table: 'calls',
           filter: `receiver_id=eq.${userId},status=eq.pending`,
         },
-        async (payload) => {
-          if (!isMountedRef.current) return;
-
-          const call = payload.new as CallType;
-
-          try {
-            // Fetch caller profile
-            const { data: callerProfile, error: profileError } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('user_id', call.caller_id)
-              .single();
-
-            if (profileError) throw profileError;
-
-            if (isMountedRef.current) {
-              setIncomingCall({
-                ...call,
-                caller: callerProfile,
-              });
-            }
-          } catch (err) {
-            console.error('Error fetching caller profile:', err);
-            if (isMountedRef.current) {
-              setIncomingCall(call as IncomingCall);
-            }
-          }
-        }
+        (payload) => handleNewCall(payload.new as CallType)
       )
       .on(
         'postgres_changes',

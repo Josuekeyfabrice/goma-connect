@@ -387,6 +387,20 @@ const Call = () => {
 
         setCall(callData as CallType);
         setCallStatus('ringing');
+
+        // Send broadcast notification for instant call detection
+        const channel = supabase.channel(`incoming-calls-${userId}`);
+        await channel.subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+            await channel.send({
+              type: 'broadcast',
+              event: 'new-call',
+              payload: callData
+            });
+            supabase.removeChannel(channel);
+          }
+        });
+
         await initWebRTC(true, callData.id);
       }
     };

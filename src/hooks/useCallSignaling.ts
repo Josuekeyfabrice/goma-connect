@@ -77,7 +77,20 @@ export const useCallSignaling = ({
     const channelName = `call-signaling-${callId}`;
 
     const channel = supabase
-      .channel(channelName)
+      .channel(channelName, {
+        config: {
+          broadcast: { self: false }
+        }
+      })
+      .on(
+        'broadcast',
+        { event: 'signaling' },
+        ({ payload }) => {
+          if (!isMountedRef.current) return;
+          const message = payload as SignalingMessage;
+          callbacksRef.current.forEach((callback) => callback(message));
+        }
+      )
       .on(
         'postgres_changes',
         {
@@ -129,17 +142,24 @@ export const useCallSignaling = ({
       }
 
       try {
-        const { error } = await supabase.from('call_signaling').insert({
+        // 1. Send via Broadcast for instant delivery
+        if (channelRef.current) {
+          await channelRef.current.send({
+            type: 'broadcast',
+            event: 'signaling',
+            payload: { ...message, senderId: userId, callId }
+          });
+        }
+
+        // 2. Persist in DB as fallback/history
+        await supabase.from('call_signaling').insert({
           call_id: callId,
           sender_id: userId,
           type: message.type,
           payload: message.payload,
         });
-
-        if (error) throw error;
       } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : 'Failed to send signaling message';
-        throw new Error(errorMsg);
+        console.error('Signaling error:', err);
       }
     },
     [callId, userId]
