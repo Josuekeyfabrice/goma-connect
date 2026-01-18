@@ -8,7 +8,6 @@ import { Phone, PhoneOff, Video, VideoOff, Mic, MicOff, Loader2, RefreshCw } fro
 import { useToast } from '@/hooks/use-toast';
 import { WebRTCSignaling, getRTCConfiguration, type SignalingMessage } from '@/utils/webrtc-signaling';
 import { useConnectionQuality } from '@/hooks/useConnectionQuality';
-import { useRingtone } from '@/hooks/useRingtone';
 import { SignalStrengthIndicator } from '@/components/calls/SignalStrengthIndicator';
 import type { Profile, Call as CallType } from '@/types/database';
 
@@ -24,7 +23,6 @@ const Call = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { stopRingtone } = useRingtone();
 
   const [partner, setPartner] = useState<Profile | null>(null);
   const [callStatus, setCallStatus] = useState<'connecting' | 'ringing' | 'connected' | 'ended' | 'reconnecting'>('connecting');
@@ -87,8 +85,8 @@ const Call = () => {
         }
         pendingCandidatesRef.current = [];
         
-        if (pc.signalingState !== 'have-remote-offer') {
-          console.error('Cannot create answer: unexpected state', pc.signalingState);
+        if (pc.signalingState === 'closed') {
+          console.error('Cannot create answer: PeerConnection is closed');
           return;
         }
         
@@ -452,118 +450,64 @@ const Call = () => {
   }, [callStatus, isWebRTCReady]);
 
   const cleanup = useCallback(() => {
-    stopRingtone();
-    
-    localStreamRef.current?.getTracks().forEach(track => {
-      try {
-        track.stop();
-      } catch (e) {
-        console.error('Error stopping track:', e);
-      }
-    });
+    localStreamRef.current?.getTracks().forEach(track => track.stop());
     localStreamRef.current = null;
     remoteStreamRef.current = null;
     
     if (peerConnectionRef.current) {
-      try {
-        peerConnectionRef.current.close();
-      } catch (e) {
-        console.error('Error closing peer connection:', e);
-      }
+      peerConnectionRef.current.close();
       peerConnectionRef.current = null;
     }
 
-    if (signalingRef.current) {
-      try {
-        signalingRef.current.disconnect();
-      } catch (e) {
-        console.error('Error disconnecting signaling:', e);
-      }
-      signalingRef.current = null;
-    }
+    signalingRef.current?.disconnect();
+    signalingRef.current = null;
 
     pendingCandidatesRef.current = [];
     hasCreatedOfferRef.current = false;
     isReconnectingRef.current = false;
-  }, [stopRingtone]);
+  }, []);
 
   const acceptCall = async () => {
     if (!call) return;
 
-    try {
-      stopRingtone();
-      await new Promise(resolve => setTimeout(resolve, 150));
-      stopRingtone();
+    await supabase
+      .from('calls')
+      .update({ 
+        status: 'accepted',
+        started_at: new Date().toISOString(),
+      })
+      .eq('id', call.id);
 
-      const { error } = await supabase
-        .from('calls')
-        .update({ 
-          status: 'accepted',
-          started_at: new Date().toISOString(),
-        })
-        .eq('id', call.id);
-
-      if (error) throw error;
-
-      setCallStatus('connecting');
-      await initWebRTC(false, call.id);
-    } catch (error) {
-      console.error('Error accepting call:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible d\'accepter l\'appel',
-        variant: 'destructive',
-      });
-    }
+    setCallStatus('connecting');
+    await initWebRTC(false, call.id);
   };
 
   const rejectCall = async () => {
     if (!call) return;
 
-    try {
-      stopRingtone();
-      await new Promise(resolve => setTimeout(resolve, 150));
-      stopRingtone();
+    await supabase
+      .from('calls')
+      .update({ status: 'rejected' })
+      .eq('id', call.id);
 
-      const { error } = await supabase
-        .from('calls')
-        .update({ status: 'rejected' })
-        .eq('id', call.id);
-
-      if (error) throw error;
-
-      cleanup();
-      navigate('/messages');
-    } catch (error) {
-      console.error('Error rejecting call:', error);
-      cleanup();
-      navigate('/messages');
-    }
+    cleanup();
+    navigate('/messages');
   };
 
   const endCall = async () => {
-    try {
-      stopRingtone();
-      await new Promise(resolve => setTimeout(resolve, 150));
-      stopRingtone();
-      
-      if (call && callStatus !== 'ended') {
-        const { error } = await supabase
-          .from('calls')
-          .update({ 
-            status: 'ended',
-            ended_at: new Date().toISOString(),
-          })
-          .eq('id', call.id);
+    cleanup();
 
-        if (error) console.error('Error ending call:', error);
-      }
-    } catch (error) {
-      console.error('Error in endCall:', error);
-    } finally {
-      cleanup();
-      navigate('/messages');
+    if (call && callStatus !== 'ended') {
+      await supabase
+        .from('calls')
+        .update({ 
+          status: 'ended',
+          ended_at: new Date().toISOString(),
+        })
+        .eq('id', call.id);
     }
+
+    navigate('/messages');
   };
 
   const toggleMute = () => {

@@ -12,8 +12,7 @@ import {
   Smartphone, 
   MessageSquare,
   Copy,
-  Check,
-  CreditCard
+  Check
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
