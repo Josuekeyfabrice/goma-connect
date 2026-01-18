@@ -88,10 +88,13 @@ const LiveTV = () => {
 
   const channels = [
     { id: 1, name: "France 24", category: "Infos", url: "https://www.youtube.com/embed/wwNQsk7igpQ?autoplay=1", color: "bg-blue-600" },
-    { id: 2, name: "Euronews", category: "Infos", url: "https://www.youtube.com/embed/PY_N1XS_m9E?autoplay=1", color: "bg-blue-800" },
-    { id: 3, name: "RTNC Live", category: "National", url: "https://www.youtube.com/embed/live_stream?channel=UCv_f3p8f_v7m6z_Y_Xv_f3p", color: "bg-blue-500" },
-    { id: 4, name: "Digital Congo", category: "National", url: "https://www.youtube.com/embed/live_stream?channel=UCv_f3p8f_v7m6z_Y_Xv_f3p", color: "bg-yellow-600" },
-    { id: 5, name: "Canal+ Sport", category: "Sports", url: "https://www.youtube.com/embed/dQw4w9WgXcQ", color: "bg-red-600" },
+    { id: 2, name: "Euronews (FR)", category: "Infos", url: "https://www.youtube.com/embed/PY_N1XS_m9E?autoplay=1", color: "bg-blue-800" },
+    { id: 3, name: "Africa24", category: "Infos", url: "https://www.youtube.com/embed/live_stream?channel=UCv_f3p8f_v7m6z_Y_Xv_f3p", color: "bg-yellow-600" },
+    { id: 4, name: "TV5 Monde", category: "Divertissement", url: "https://www.youtube.com/embed/live_stream?channel=UCv_f3p8f_v7m6z_Y_Xv_f3p", color: "bg-red-600" },
+    { id: 5, name: "TRT Français", category: "Infos", url: "https://www.youtube.com/embed/live_stream?channel=UCv_f3p8f_v7m6z_Y_Xv_f3p", color: "bg-green-600" },
+    { id: 6, name: "Al Jazeera (EN)", category: "Infos", url: "https://www.youtube.com/embed/gCNeDWCI0vo?autoplay=1", color: "bg-orange-600" },
+    { id: 7, name: "Sky News", category: "Infos", url: "https://www.youtube.com/embed/9Auq9mYxFEE?autoplay=1", color: "bg-sky-600" },
+    { id: 8, name: "DW News", category: "Infos", url: "https://www.youtube.com/embed/v_f3p8f_v7m6z_Y_Xv_f3p", color: "bg-gray-600" },
   ];
 
   const [currentChannel, setCurrentChannel] = useState(channels[0]);
