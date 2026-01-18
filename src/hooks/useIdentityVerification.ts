@@ -73,13 +73,14 @@ export const useIdentityVerification = () => {
       await new Promise(resolve => setTimeout(resolve, 3000));
 
       // Update user profile with verification status
+      // We try both 'user_id' and 'id' to be safe, though 'user_id' is standard in this project
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
           is_verified: true,
           updated_at: new Date().toISOString(),
         })
-        .eq('user_id', userId);
+        .or(`user_id.eq.${userId},id.eq.${userId}`);
 
       if (updateError) throw updateError;
 
