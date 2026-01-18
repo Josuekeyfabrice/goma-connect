@@ -6,6 +6,7 @@ import { ShieldCheck, Camera, FileText, Loader2, CheckCircle2, AlertCircle, Uplo
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useIdentityVerification } from '@/hooks/useIdentityVerification';
+import { useProfile } from '@/hooks/useProfile';
 
 export const IdentityVerification = () => {
   const { user } = useAuth();
@@ -77,24 +78,36 @@ export const IdentityVerification = () => {
     }
   };
 
+  const { profile } = useProfile();
+  const isAlreadyVerified = profile?.is_verified;
+
   return (
-    <Card className="mt-8 border-primary/20 bg-primary/5">
+    <Card className={`mt-8 border-primary/20 ${isAlreadyVerified ? 'bg-green-50/50 border-green-200' : 'bg-primary/5'}`}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-primary" />
-            Vérification d'Identité IA
+            <ShieldCheck className={`h-5 w-5 ${isAlreadyVerified ? 'text-green-600' : 'text-primary'}`} />
+            {isAlreadyVerified ? 'Compte Vérifié' : 'Vérification d\'Identité IA'}
           </CardTitle>
-          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-            Nouveau
-          </Badge>
+          {!isAlreadyVerified && (
+            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+              Nouveau
+            </Badge>
+          )}
+          {isAlreadyVerified && (
+            <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200">
+              Certifié
+            </Badge>
+          )}
         </div>
         <CardDescription>
-          Utilisez notre intelligence artificielle pour vérifier votre compte instantanément.
+          {isAlreadyVerified 
+            ? 'Votre identité a été confirmée. Vous bénéficiez d\'une visibilité accrue.' 
+            : 'Utilisez notre intelligence artificielle pour vérifier votre compte instantanément.'}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {step === 'start' && (
+        {(step === 'start' && !isAlreadyVerified) && (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               La vérification renforce la confiance des acheteurs et vous donne accès au badge **Vendeur Vérifié**.
@@ -102,6 +115,21 @@ export const IdentityVerification = () => {
             <Button onClick={handleStart} className="w-full gradient-primary text-white">
               Commencer la vérification
             </Button>
+          </div>
+        )}
+        {isAlreadyVerified && (
+          <div className="space-y-4 text-center py-4">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 className="h-8 w-8 text-green-600" />
+            </div>
+            <h3 className="font-bold text-green-600">Identité Confirmée</h3>
+            <p className="text-sm text-muted-foreground">
+              Votre badge de confiance est actif sur toutes vos annonces et votre profil public.
+            </p>
+            <div className="flex items-center gap-2 justify-center p-3 bg-white rounded-lg border border-green-100 shadow-sm">
+              <ShieldCheck className="h-5 w-5 text-green-600" />
+              <span className="text-sm font-bold text-green-700 uppercase tracking-wider">Vendeur Certifié Goma-Connect</span>
+            </div>
           </div>
         )}
 

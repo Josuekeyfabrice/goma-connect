@@ -7,26 +7,26 @@ const createRingtoneBuffer = async (audioContext: AudioContext): Promise<AudioBu
   const buffer = audioContext.createBuffer(1, sampleRate * duration, sampleRate);
   const data = buffer.getChannelData(0);
   
-  // Create a phone-like ringtone pattern
-  const frequencies = [440, 480]; // A4 and slightly higher - classic phone ring
+  // Create a WhatsApp-like melodic ringtone pattern
+  const frequencies = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 (C Major chord)
   
   for (let i = 0; i < data.length; i++) {
     const t = i / sampleRate;
-    const ringPattern = Math.sin(2 * Math.PI * 20 * t) > 0 ? 1 : 0; // Ring pattern
     
-    let sample = 0;
-    for (const freq of frequencies) {
-      sample += Math.sin(2 * Math.PI * freq * t) * 0.3;
-    }
+    // Melodic sequence
+    const noteIndex = Math.floor(t * 4) % frequencies.length;
+    const freq = frequencies[noteIndex];
     
-    // Apply envelope for each ring burst
-    const burstDuration = 0.4;
-    const silenceDuration = 0.2;
-    const cycleTime = t % (burstDuration + silenceDuration);
-    const envelope = cycleTime < burstDuration ? 
-      Math.sin(Math.PI * cycleTime / burstDuration) : 0;
+    let sample = Math.sin(2 * Math.PI * freq * t) * 0.3;
+    // Add some harmonics for a richer sound
+    sample += Math.sin(2 * Math.PI * freq * 2 * t) * 0.1;
     
-    data[i] = sample * envelope * ringPattern;
+    // Envelope for each note
+    const noteDuration = 0.25;
+    const cycleTime = t % noteDuration;
+    const envelope = Math.exp(-5 * cycleTime); // Fast decay
+    
+    data[i] = sample * envelope;
   }
   
   return buffer;

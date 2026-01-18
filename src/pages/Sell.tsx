@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,8 @@ import { GeolocationPicker } from '@/components/maps/GeolocationPicker';
 const Sell = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isFlashSale = searchParams.get('type') === 'flash';
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<File[]>([]);
@@ -118,29 +120,51 @@ const Sell = () => {
     try {
       const uploadedImages = await uploadImages();
 
-      const { error } = await supabase.from('products').insert({
-        seller_id: user.id,
-        name: formData.name,
-        description: formData.description,
-        price: parseFloat(formData.price),
-        category: formData.category,
-        city: formData.city,
-        avenue: formData.avenue,
-        address: formData.address,
-        phone: formData.phone,
-        images: uploadedImages,
-        latitude: formData.latitude,
-        longitude: formData.longitude,
-      });
+      if (isFlashSale) {
+        // Create a Story for Flash Sale
+        const { error: storyError } = await supabase.from('stories').insert({
+          user_id: user.id,
+          image_url: uploadedImages[0],
+          product_name: formData.name,
+          price: `${formData.price}$`,
+          is_live: true,
+          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        });
 
-      if (error) throw error;
+        if (storyError) throw storyError;
 
-      toast({
-        title: "Annonce publiée",
-        description: "Votre annonce a été publiée avec succès",
-      });
+        toast({
+          title: "Vente Flash publiée !",
+          description: "Votre story est maintenant visible par tous pendant 24h.",
+        });
+        
+        navigate('/');
+      } else {
+        // Regular product listing
+        const { error } = await supabase.from('products').insert({
+          seller_id: user.id,
+          name: formData.name,
+          description: formData.description,
+          price: parseFloat(formData.price),
+          category: formData.category,
+          city: formData.city,
+          avenue: formData.avenue,
+          address: formData.address,
+          phone: formData.phone,
+          images: uploadedImages,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
+        });
 
-      navigate('/my-products');
+        if (error) throw error;
+
+        toast({
+          title: "Annonce publiée",
+          description: "Votre annonce a été publiée avec succès",
+        });
+
+        navigate('/my-products');
+      }
     } catch (error: any) {
       toast({
         title: "Erreur",
@@ -167,12 +191,19 @@ const Sell = () => {
       <Header />
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
-          <h1 className="font-display text-3xl font-bold mb-8">Publier une annonce</h1>
+          <h1 className="font-display text-3xl font-bold mb-2">
+            {isFlashSale ? 'Créer une Vente Flash' : 'Publier une annonce'}
+          </h1>
+          <p className="text-muted-foreground mb-8">
+            {isFlashSale 
+              ? 'Votre offre sera affichée en haut de la page d\'accueil pendant 24 heures.' 
+              : 'Remplissez les détails ci-dessous pour mettre votre produit en vente.'}
+          </p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Images */}
             <div className="space-y-2">
-              <Label>Photos du produit *</Label>
+              <Label>{isFlashSale ? 'Photo de la Story *' : 'Photos du produit *'}</Label>
               <div className="grid grid-cols-3 gap-4">
                 {imageUrls.map((url, index) => (
                   <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
@@ -323,7 +354,7 @@ const Sell = () => {
 
             <Button
               type="submit" 
-              className="w-full gradient-primary text-primary-foreground"
+              className="w-full gradient-primary text-primary-foreground h-12 text-lg font-bold"
               disabled={loading}
             >
               {loading ? (
@@ -332,7 +363,7 @@ const Sell = () => {
                   Publication...
                 </>
               ) : (
-                'Publier l\'annonce'
+                isFlashSale ? 'Lancer la Vente Flash' : 'Publier l\'annonce'
               )}
             </Button>
           </form>

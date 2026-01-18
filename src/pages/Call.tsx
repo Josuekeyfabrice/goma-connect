@@ -197,13 +197,20 @@ const Call = () => {
           autoGainControl: true,
         },
         video: callType === 'video' ? {
-          width: { ideal: 640 },
-          height: { ideal: 480 },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
           facingMode: 'user',
+          frameRate: { ideal: 30 }
         } : false,
       };
 
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (e) {
+        console.error('Failed to get media with ideal constraints, trying fallback', e);
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: callType === 'video' });
+      }
       localStreamRef.current = stream;
       
       if (localVideoRef.current && callType === 'video') {
@@ -225,29 +232,22 @@ const Call = () => {
         console.log('Received remote track:', event.track.kind);
         
         if (event.streams && event.streams[0]) {
-          const remoteStream = event.streams[0];
-          
-          if (event.track.kind === 'video' && remoteVideoRef.current) {
-            remoteVideoRef.current.srcObject = remoteStream;
-          }
-          
-          if (event.track.kind === 'audio' && remoteAudioRef.current) {
-            remoteAudioRef.current.srcObject = remoteStream;
-            remoteAudioRef.current.play().catch(console.log);
-          }
-          
-          remoteStreamRef.current = remoteStream;
+          remoteStreamRef.current = event.streams[0];
         } else {
-          remoteStreamRef.current?.addTrack(event.track);
-          
-          if (event.track.kind === 'audio' && remoteAudioRef.current) {
-            remoteAudioRef.current.srcObject = remoteStreamRef.current;
-            remoteAudioRef.current.play().catch(console.log);
-          }
-          
-          if (event.track.kind === 'video' && remoteVideoRef.current) {
-            remoteVideoRef.current.srcObject = remoteStreamRef.current;
-          }
+          if (!remoteStreamRef.current) remoteStreamRef.current = new MediaStream();
+          remoteStreamRef.current.addTrack(event.track);
+        }
+
+        if (remoteVideoRef.current && callType === 'video') {
+          remoteVideoRef.current.srcObject = remoteStreamRef.current;
+        }
+        
+        if (remoteAudioRef.current) {
+          remoteAudioRef.current.srcObject = remoteStreamRef.current;
+          // Ensure audio plays after user interaction
+          remoteAudioRef.current.play().catch(err => {
+            console.log('Audio play failed, waiting for interaction', err);
+          });
         }
       };
 
