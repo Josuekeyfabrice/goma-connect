@@ -51,15 +51,15 @@ const LiveTV = () => {
   const [episode, setEpisode] = useState(1);
 
   const channels = [
-    { id: 1, name: "France 24", category: "Infos", url: "https://static.france24.com/live/F24_FR_HI_HLS/live_tv.m3u8", color: "bg-blue-600", isYoutube: false },
+    { id: 1, name: "France 24", category: "Infos", url: "https://dash4.antik.sk/live/test_france24_france/playlist.m3u8", color: "bg-blue-600", isYoutube: false },
     { id: 2, name: "Africa 24", category: "Infos", url: "https://africa24.vedge.infomaniak.com/livecast/ik:africa24/manifest.m3u8", color: "bg-yellow-600", isYoutube: false },
-    { id: 3, name: "TV5 Monde Info", category: "Infos", url: "https://ott.tv5monde.com/Content/HLS/Live/channel(info)/index.m3u8", color: "bg-red-600", isYoutube: false },
-    { id: 4, name: "Euronews FR", category: "Infos", url: "https://cdn-euronews.akamaized.net/live/eds/africanews-fr/25050/index.m3u8", color: "bg-blue-800", isYoutube: false },
+    { id: 3, name: "Africanews French", category: "Infos", url: "https://cdn-euronews.akamaized.net/live/eds/africanews-fr/25050/index.m3u8", color: "bg-red-600", isYoutube: false },
+    { id: 4, name: "Euronews French", category: "Infos", url: "https://viamotionhsi.netplus.ch/live/eds/euronews/browser-HLS8/euronews.m3u8", color: "bg-blue-800", isYoutube: false },
     { id: 5, name: "Africa 24 Sport", category: "Sports", url: "https://africa24.vedge.infomaniak.com/livecast/ik:africa24sport/manifest.m3u8", color: "bg-green-600", isYoutube: false },
-    { id: 6, name: "Abu Dhabi Sports 1", category: "Sports", url: "https://admn-live-cdn-lb.starzplayarabia.com/out/v1/admn_tv_enc/abudhabi_sports_1/abudhabi_sports_1_hls_nd/index.m3u8", color: "bg-red-700", isYoutube: false },
-    { id: 7, name: "Afrobeats TV", category: "Musique", url: "https://stream.ecable.tv/afrobeats/index.m3u8", color: "bg-purple-600", isYoutube: false },
-    { id: 8, name: "A2i Music", category: "Musique", url: "https://stream.sen-gt.com/A2iMusic/myStream/playlist.m3u8", color: "bg-pink-600", isYoutube: false },
-    { id: 9, name: "Al Jazeera", category: "Infos", url: "https://www.youtube.com/embed/gCNeDWCI0vo?autoplay=1", color: "bg-orange-600", isYoutube: true },
+    { id: 6, name: "FIFA+ French", category: "Sports", url: "https://37b4c228.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWZyX0ZJRkFQbHVzRnJlbmNoX0hMUw/playlist.m3u8", color: "bg-red-700", isYoutube: false },
+    { id: 7, name: "Clubbing TV France", category: "Musique", url: "https://d1j2csarxnwazk.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-uze1m6xh4fiyr-ssai-prd/master.m3u8", color: "bg-purple-600", isYoutube: false },
+    { id: 8, name: "DBM TV", category: "Musique", url: "https://dbmtv.vedge.infomaniak.com/livecast/dbmtv/playlist.m3u8", color: "bg-pink-600", isYoutube: false },
+    { id: 9, name: "Digital Congo TV", category: "Infos", url: "http://51.254.199.122:8080/DigitalCongoTV/index.m3u8", color: "bg-orange-600", isYoutube: false },
   ];
 
   const [currentChannel, setCurrentChannel] = useState(channels[0]);
