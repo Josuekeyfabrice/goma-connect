@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
+import { supabase } from "@/integrations/supabase/client";
 
-// Placeholder types until the transactions table is created
-interface Transaction {
+export interface Transaction {
   id: string;
   buyer_id: string;
   seller_id: string;
@@ -18,7 +18,6 @@ export const useTransactions = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Placeholder implementations - these will work when the transactions table is created
   const createTransaction = useCallback(async (
     buyerId: string,
     sellerId: string,
@@ -30,24 +29,26 @@ export const useTransactions = () => {
     setError(null);
 
     try {
-      // Placeholder: In production, this would insert into the transactions table
-      console.log('Transaction would be created:', { buyerId, sellerId, productId, amount, paymentMethod });
-      
-      const mockTransaction: Transaction = {
-        id: `txn-${Date.now()}`,
-        buyer_id: buyerId,
-        seller_id: sellerId,
-        product_id: productId,
-        amount,
-        status: 'pending',
-        payment_method: paymentMethod,
-        escrow_status: 'waiting',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
+      const { data, error } = await supabase
+        .from('transactions')
+        .insert([
+          {
+            buyer_id: buyerId,
+            seller_id: sellerId,
+            product_id: productId,
+            amount,
+            payment_method: paymentMethod,
+            status: 'pending',
+            escrow_status: 'waiting'
+          }
+        ])
+        .select()
+        .single();
 
-      return mockTransaction;
+      if (error) throw error;
+      return data as Transaction;
     } catch (err: any) {
+      console.error('Error creating transaction:', err);
       setError(err.message);
       return null;
     } finally {
@@ -60,9 +61,18 @@ export const useTransactions = () => {
     setError(null);
 
     try {
-      console.log('Payment confirmed for transaction:', transactionId);
+      const { error } = await supabase
+        .from('transactions')
+        .update({ 
+          status: 'paid', 
+          escrow_status: 'held' 
+        })
+        .eq('id', transactionId);
+
+      if (error) throw error;
       return true;
     } catch (err: any) {
+      console.error('Error confirming payment:', err);
       setError(err.message);
       return false;
     } finally {
@@ -75,9 +85,18 @@ export const useTransactions = () => {
     setError(null);
 
     try {
-      console.log('Delivery confirmed for transaction:', transactionId);
+      const { error } = await supabase
+        .from('transactions')
+        .update({ 
+          status: 'completed', 
+          escrow_status: 'released' 
+        })
+        .eq('id', transactionId);
+
+      if (error) throw error;
       return true;
     } catch (err: any) {
+      console.error('Error confirming delivery:', err);
       setError(err.message);
       return false;
     } finally {
@@ -90,9 +109,18 @@ export const useTransactions = () => {
     setError(null);
 
     try {
-      console.log('Transaction cancelled:', transactionId);
+      const { error } = await supabase
+        .from('transactions')
+        .update({ 
+          status: 'cancelled', 
+          escrow_status: 'refunded' 
+        })
+        .eq('id', transactionId);
+
+      if (error) throw error;
       return true;
     } catch (err: any) {
+      console.error('Error cancelling transaction:', err);
       setError(err.message);
       return false;
     } finally {
@@ -105,9 +133,26 @@ export const useTransactions = () => {
     setError(null);
 
     try {
-      console.log('Transaction disputed:', transactionId, reason);
+      const { error } = await supabase
+        .from('transactions')
+        .update({ 
+          status: 'disputed'
+        })
+        .eq('id', transactionId);
+
+      if (error) throw error;
+      
+      // Optionnel: Créer un rapport de litige
+      await supabase.from('reports').insert([{
+        reporter_id: (await supabase.auth.getUser()).data.user?.id,
+        reason: 'Transaction Dispute',
+        description: `Dispute for transaction ${transactionId}: ${reason}`,
+        status: 'pending'
+      }]);
+
       return true;
     } catch (err: any) {
+      console.error('Error disputing transaction:', err);
       setError(err.message);
       return false;
     } finally {
