@@ -23,7 +23,12 @@ export const IdentityVerification = () => {
   } = useIdentityVerification();
   const [step, setStep] = useState<'start' | 'upload_id' | 'selfie' | 'processing' | 'success'>('start');
 
-  const handleStart = () => setStep('upload_id');
+  const handleStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("Starting verification process...");
+    setStep('upload_id');
+  };
   
   const handleUploadID = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -116,7 +121,11 @@ export const IdentityVerification = () => {
             <p className="text-sm text-muted-foreground">
               La vérification renforce la confiance des acheteurs et vous donne accès au badge **Vendeur Vérifié**.
             </p>
-            <Button onClick={handleStart} className="w-full gradient-primary text-white">
+            <Button 
+              type="button"
+              onClick={handleStart} 
+              className="w-full gradient-primary text-white relative z-10"
+            >
               Commencer la vérification
             </Button>
           </div>
@@ -154,7 +163,11 @@ export const IdentityVerification = () => {
               className="hidden"
             />
             <Button 
-              onClick={() => fileInputRef.current?.click()} 
+              type="button"
+              onClick={() => {
+                console.log("Triggering file input click");
+                fileInputRef.current?.click();
+              }} 
               disabled={loading} 
               className="w-full"
             >
