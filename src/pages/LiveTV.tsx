@@ -23,6 +23,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { tmdbService } from '@/services/tmdb';
+import { iptvService, IPTV_SERVERS } from '@/services/iptv';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Hls from 'hls.js';
 import {
@@ -144,13 +145,26 @@ const LiveTV = () => {
     setSelectedMedia({ ...media, type });
     
     let baseUrl = "";
+    // Utilisation prioritaire de VidFast/VidNest pour une meilleure qualité
     if (type === 'movie') {
-      baseUrl = `https://vidsrc.to/embed/movie/${media.id}`;
+      baseUrl = iptvService.getVidFastMovieUrl(media.id);
     } else {
-      baseUrl = `https://vidsrc.to/embed/tv/${media.id}/${season}/${episode}`;
+      baseUrl = iptvService.getVidFastTVUrl(media.id, season, episode);
     }
     
     setPlayerUrl(baseUrl);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const playPremiumChannel = (streamId: string, name: string) => {
+    if (isLocked && !hasPass) {
+      setShowPaywall(true);
+      return;
+    }
+    const config = IPTV_SERVERS[0]; // Utilise le premier serveur par défaut
+    const url = iptvService.getStreamUrl(config, streamId);
+    setCurrentChannel({ id: Date.now(), name, category: "Premium", url, color: "bg-purple-600", isYoutube: false });
+    setPlayerUrl(null); // S'assurer qu'on utilise le lecteur HLS
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -248,6 +262,9 @@ const LiveTV = () => {
               </TabsTrigger>
               <TabsTrigger value="series" className="rounded-[1.5rem] gap-2 flex-1 py-3 data-[state=active]:bg-primary data-[state=active]:shadow-lg data-[state=active]:shadow-primary/30">
                 <MonitorPlay className="h-5 w-5" /> Séries
+              </TabsTrigger>
+              <TabsTrigger value="premium" className="rounded-[1.5rem] gap-2 flex-1 py-3 data-[state=active]:bg-purple-600 data-[state=active]:shadow-lg data-[state=active]:shadow-purple-600/30">
+                <Zap className="h-5 w-5" /> Premium
               </TabsTrigger>
             </TabsList>
 
@@ -348,6 +365,48 @@ const LiveTV = () => {
                     </div>
                   </motion.div>
                 ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="premium" className="space-y-8">
+              <div className="flex items-center justify-between">
+                <h3 className="text-3xl font-black font-display tracking-tight text-purple-400">Chaînes Premium Goma</h3>
+                <Badge variant="outline" className="border-purple-500/30 text-purple-300 px-4 py-1">
+                  Accès VIP Xtream
+                </Badge>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[
+                  { id: 'canal_plus', name: "Canal+ Sport", streamId: "12345" }, // IDs fictifs pour l'exemple, à remplacer par les vrais IDs du serveur
+                  { id: 'bein_sport', name: "beIN Sports 1", streamId: "67890" },
+                  { id: 'tf1_premium', name: "TF1 HD", streamId: "11223" },
+                  { id: 'm6_premium', name: "M6 HD", streamId: "44556" },
+                  { id: 'national_geo', name: "National Geo", streamId: "77889" },
+                  { id: 'disney_ch', name: "Disney Channel", streamId: "99001" },
+                ].map((channel) => (
+                  <motion.div 
+                    key={channel.id}
+                    whileHover={{ scale: 1.05, y: -5 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => playPremiumChannel(channel.streamId, channel.name)}
+                    className="p-6 rounded-[2rem] cursor-pointer border-2 border-purple-500/10 bg-purple-500/5 hover:bg-purple-500/10 transition-all shadow-xl"
+                  >
+                    <div className="flex items-center gap-5">
+                      <div className="h-16 w-16 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-2xl bg-purple-600">
+                        {channel.name.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-black text-lg">{channel.name}</p>
+                        <p className="text-sm text-purple-400 font-medium">PREMIUM HD</p>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+              <div className="bg-purple-900/20 border border-purple-500/20 p-6 rounded-[2rem] mt-8">
+                <p className="text-center text-purple-300 font-bold">
+                  Note : Les chaînes premium nécessitent un abonnement actif. Contactez le support pour activer votre accès Xtream Codes.
+                </p>
               </div>
             </TabsContent>
           </Tabs>
