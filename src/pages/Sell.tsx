@@ -121,24 +121,14 @@ const Sell = () => {
       const uploadedImages = await uploadImages();
 
       if (isFlashSale) {
-        // Create a Story for Flash Sale
-        const { error: storyError } = await supabase.from('stories').insert({
-          user_id: user.id,
-          image_url: uploadedImages[0],
-          product_name: formData.name,
-          price: `${formData.price}$`,
-          is_live: true,
-          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        });
-
-        if (storyError) throw storyError;
-
+        // Flash sale feature - stories table not yet implemented
         toast({
-          title: "Vente Flash publiée !",
-          description: "Votre story est maintenant visible par tous pendant 24h.",
+          title: "Fonctionnalité en développement",
+          description: "Les ventes flash seront bientôt disponibles. En attendant, créez une annonce standard.",
+          variant: "destructive",
         });
-        
-        navigate('/');
+        setLoading(false);
+        return;
       } else {
         // Regular product listing
         const { error } = await supabase.from('products').insert({

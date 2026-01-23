@@ -2,12 +2,13 @@ import { BadgeCheck } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface VerifiedBadgeProps {
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
   showTooltip?: boolean;
 }
 
 export const VerifiedBadge = ({ size = 'md', showTooltip = true }: VerifiedBadgeProps) => {
   const sizeClasses = {
+    xs: 'h-3 w-3',
     sm: 'h-4 w-4',
     md: 'h-5 w-5',
     lg: 'h-6 w-6',

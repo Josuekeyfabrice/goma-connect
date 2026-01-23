@@ -10,6 +10,7 @@ import { OnlineIndicator } from '@/components/ui/OnlineIndicator';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Send, Phone, Video, Loader2, ArrowLeft, Check, CheckCheck } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';

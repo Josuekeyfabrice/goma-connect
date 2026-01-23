@@ -22,6 +22,9 @@ interface UseCallSignalingReturn {
   sendSignalingMessage: (message: SignalingMessage) => Promise<void>;
   updateCallStatus: (status: 'pending' | 'accepted' | 'rejected' | 'ended') => Promise<void>;
   onSignalingMessage: (callback: (message: SignalingMessage) => void) => void;
+  sendOffer: (offer: RTCSessionDescriptionInit) => Promise<void>;
+  sendAnswer: (answer: RTCSessionDescriptionInit) => Promise<void>;
+  sendIceCandidate: (candidate: RTCIceCandidateInit) => Promise<void>;
 }
 
 export const useCallSignaling = ({
@@ -52,13 +55,19 @@ export const useCallSignaling = ({
           .single();
 
         if (fetchError) throw fetchError;
-
-        if (isMountedRef.current) {
-          setCall(data as CallType);
+        if (isMountedRef.current && data) {
+          // Cast to proper type
+          const typedCall: CallType = {
+            ...data,
+            status: data.status as CallType['status'],
+            call_type: data.call_type as CallType['call_type']
+          };
+          setCall(typedCall);
         }
-      } catch (err) {
+      } catch (err: any) {
+        console.error('Error loading call:', err);
         if (isMountedRef.current) {
-          setError(err instanceof Error ? err : new Error('Failed to load call'));
+          setError(err);
         }
       } finally {
         if (isMountedRef.current) {
@@ -68,48 +77,36 @@ export const useCallSignaling = ({
     };
 
     loadCall();
+
+    return () => {
+      isMountedRef.current = false;
+    };
   }, [callId, enabled]);
 
-  // Subscribe to call signaling messages
+  // Set up realtime channel for signaling using Broadcast
   useEffect(() => {
     if (!callId || !userId || !enabled) return;
 
-    const channelName = `call-signaling-${callId}`;
+    const channelName = `call:${callId}`;
+    const channel = supabase.channel(channelName);
 
-    const channel = supabase
-      .channel(channelName, {
-        config: {
-          broadcast: { self: false }
+    channel
+      .on('broadcast', { event: 'signaling' }, (payload) => {
+        const message = payload.payload as SignalingMessage;
+        // Don't process own messages
+        if (message.senderId !== userId) {
+          callbacksRef.current.forEach((cb) => cb(message));
         }
       })
-      .on(
-        'broadcast',
-        { event: 'signaling' },
-        ({ payload }) => {
-          if (!isMountedRef.current) return;
-          const message = payload as SignalingMessage;
-          callbacksRef.current.forEach((callback) => callback(message));
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'call_signaling',
-          filter: `call_id=eq.${callId}`,
-        },
-        (payload) => {
-          if (!isMountedRef.current) return;
+      .subscribe((status) => {
+        console.log(`Channel ${channelName} status:`, status);
+      });
 
-          const message = payload.new as SignalingMessage;
+    channelRef.current = channel;
 
-          // Only process messages not sent by this user
-          if (message.senderId !== userId) {
-            callbacksRef.current.forEach((callback) => callback(message));
-          }
-        }
-      )
+    // Subscribe to call status changes
+    const callChannel = supabase
+      .channel(`call-status:${callId}`)
       .on(
         'postgres_changes',
         {
@@ -119,50 +116,74 @@ export const useCallSignaling = ({
           filter: `id=eq.${callId}`,
         },
         (payload) => {
-          if (!isMountedRef.current) return;
-
-          const updatedCall = payload.new as CallType;
-          setCall(updatedCall);
+          if (isMountedRef.current) {
+            setCall(payload.new as CallType);
+          }
         }
       )
       .subscribe();
 
-    channelRef.current = channel;
-
     return () => {
       supabase.removeChannel(channel);
-      channelRef.current = null;
+      supabase.removeChannel(callChannel);
     };
   }, [callId, userId, enabled]);
 
   const sendSignalingMessage = useCallback(
     async (message: SignalingMessage) => {
-      if (!callId || !userId) {
-        throw new Error('Missing callId or userId');
+      if (!channelRef.current || !callId || !userId) {
+        console.warn('Cannot send signaling: channel not ready');
+        return;
       }
 
       try {
-        // 1. Send via Broadcast for instant delivery
-        if (channelRef.current) {
-          await channelRef.current.send({
-            type: 'broadcast',
-            event: 'signaling',
-            payload: { ...message, senderId: userId, callId }
-          });
-        }
-
-        // 2. Persist in DB as fallback/history
-        await supabase.from('call_signaling').insert({
-          call_id: callId,
-          sender_id: userId,
-          type: message.type,
-          payload: message.payload,
+        // Send via broadcast for real-time delivery
+        await channelRef.current.send({
+          type: 'broadcast',
+          event: 'signaling',
+          payload: { ...message, senderId: userId, callId }
         });
       } catch (err) {
         console.error('Signaling error:', err);
       }
     },
     [callId, userId]
+  );
+
+  const sendOffer = useCallback(
+    async (offer: RTCSessionDescriptionInit) => {
+      await sendSignalingMessage({
+        type: 'offer',
+        payload: offer,
+        callId: callId || '',
+        senderId: userId || '',
+      });
+    },
+    [sendSignalingMessage, callId, userId]
+  );
+
+  const sendAnswer = useCallback(
+    async (answer: RTCSessionDescriptionInit) => {
+      await sendSignalingMessage({
+        type: 'answer',
+        payload: answer,
+        callId: callId || '',
+        senderId: userId || '',
+      });
+    },
+    [sendSignalingMessage, callId, userId]
+  );
+
+  const sendIceCandidate = useCallback(
+    async (candidate: RTCIceCandidateInit) => {
+      await sendSignalingMessage({
+        type: 'ice-candidate',
+        payload: candidate,
+        callId: callId || '',
+        senderId: userId || '',
+      });
+    },
+    [sendSignalingMessage, callId, userId]
   );
 
   const updateCallStatus = useCallback(
@@ -180,35 +201,38 @@ export const useCallSignaling = ({
           updateData.ended_at = new Date().toISOString();
         }
 
-        const { error } = await supabase
+        const { error: updateError } = await supabase
           .from('calls')
           .update(updateData)
           .eq('id', callId);
 
-        if (error) throw error;
-      } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : 'Failed to update call status';
-        throw new Error(errorMsg);
+        if (updateError) throw updateError;
+
+        // Notify via broadcast
+        if (status === 'ended') {
+          await sendSignalingMessage({
+            type: 'call-ended',
+            callId,
+            senderId: userId || '',
+          });
+        }
+      } catch (err: any) {
+        console.error('Error updating call status:', err);
+        throw err;
       }
     },
-    [callId]
+    [callId, userId, sendSignalingMessage]
   );
 
-  const onSignalingMessage = useCallback((callback: (message: SignalingMessage) => void) => {
-    callbacksRef.current.add(callback);
-
-    return () => {
-      callbacksRef.current.delete(callback);
-    };
-  }, []);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      isMountedRef.current = false;
-      callbacksRef.current.clear();
-    };
-  }, []);
+  const onSignalingMessage = useCallback(
+    (callback: (message: SignalingMessage) => void) => {
+      callbacksRef.current.add(callback);
+      return () => {
+        callbacksRef.current.delete(callback);
+      };
+    },
+    []
+  );
 
   return {
     call,
@@ -217,5 +241,8 @@ export const useCallSignaling = ({
     sendSignalingMessage,
     updateCallStatus,
     onSignalingMessage,
+    sendOffer,
+    sendAnswer,
+    sendIceCandidate,
   };
 };

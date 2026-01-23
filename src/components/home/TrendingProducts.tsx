@@ -17,14 +17,20 @@ export const TrendingProducts = () => {
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('*, profiles(*)')
+        .select('*')
         .eq('is_active', true)
         .eq('is_approved', true)
         .order('views_count', { ascending: false })
         .limit(4);
 
       if (error) throw error;
-      setProducts(data || []);
+      
+      // Map to Product type (profiles will be undefined)
+      const mappedProducts: Product[] = (data || []).map(p => ({
+        ...p,
+        profiles: undefined
+      }));
+      setProducts(mappedProducts);
     } catch (error) {
       console.error('Error fetching trending products:', error);
     } finally {

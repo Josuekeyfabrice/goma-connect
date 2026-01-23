@@ -85,7 +85,7 @@ const Call = () => {
         }
         pendingCandidatesRef.current = [];
         
-        if (pc.signalingState === 'closed') {
+        if (!pc || pc.connectionState === 'closed') {
           console.error('Cannot create answer: PeerConnection is closed');
           return;
         }
