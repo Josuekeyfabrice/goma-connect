@@ -14,6 +14,8 @@ export class WebRTCSignaling {
   private userId: string;
   private partnerId: string;
   private onMessage: (message: SignalingMessage) => void;
+  private isConnected: boolean = false;
+  private messageQueue: SignalingMessage[] = [];
 
   constructor(
     callId: string, 
@@ -27,34 +29,85 @@ export class WebRTCSignaling {
     this.onMessage = onMessage;
   }
 
-  async connect() {
-    const channelName = `webrtc-signaling-${this.callId}`;
-    console.log('Connecting to signaling channel:', channelName);
-    
-    this.channel = supabase.channel(channelName, {
-      config: {
-        broadcast: { self: false }
-      }
-    });
-
-    this.channel
-      .on('broadcast', { event: 'signaling' }, ({ payload }) => {
-        const message = payload as SignalingMessage;
-        console.log('Received signaling message:', message.type, 'from:', message.from);
-        
-        // Only process messages meant for us
-        if (message.to === this.userId) {
-          this.onMessage(message);
+  async connect(): Promise<boolean> {
+    return new Promise((resolve) => {
+      const channelName = `webrtc-signaling-${this.callId}`;
+      console.log('Connecting to signaling channel:', channelName);
+      
+      this.channel = supabase.channel(channelName, {
+        config: {
+          broadcast: { self: false },
+          presence: { key: this.userId }
         }
-      })
-      .subscribe((status) => {
-        console.log('Signaling channel status:', status);
       });
+
+      this.channel
+        .on('broadcast', { event: 'signaling' }, ({ payload }) => {
+          const message = payload as SignalingMessage;
+          console.log('Received signaling message:', message.type, 'from:', message.from);
+          
+          // Only process messages meant for us
+          if (message.to === this.userId) {
+            this.onMessage(message);
+          }
+        })
+        .subscribe((status) => {
+          console.log('Signaling channel status:', status);
+          if (status === 'SUBSCRIBED') {
+            this.isConnected = true;
+            // Flush any queued messages
+            this.flushMessageQueue();
+            resolve(true);
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            this.isConnected = false;
+            resolve(false);
+          }
+        });
+
+      // Timeout after 10 seconds
+      setTimeout(() => {
+        if (!this.isConnected) {
+          console.error('Signaling channel connection timeout');
+          resolve(false);
+        }
+      }, 10000);
+    });
+  }
+
+  private async flushMessageQueue() {
+    while (this.messageQueue.length > 0) {
+      const message = this.messageQueue.shift();
+      if (message) {
+        await this.sendMessage(message);
+      }
+    }
+  }
+
+  private async sendMessage(message: SignalingMessage) {
+    if (!this.channel) {
+      console.warn('No channel available');
+      return;
+    }
+
+    if (!this.isConnected) {
+      console.log('Channel not ready, queuing message:', message.type);
+      this.messageQueue.push(message);
+      return;
+    }
+
+    try {
+      console.log('Sending signaling message:', message.type, 'to:', message.to);
+      await this.channel.send({
+        type: 'broadcast',
+        event: 'signaling',
+        payload: message,
+      });
+    } catch (err) {
+      console.error('Error sending signaling message:', err);
+    }
   }
 
   async sendOffer(offer: RTCSessionDescriptionInit) {
-    if (!this.channel) return;
-    
     const message: SignalingMessage = {
       type: 'offer',
       payload: offer,
@@ -63,17 +116,11 @@ export class WebRTCSignaling {
       callId: this.callId,
     };
     
-    console.log('Sending offer to:', this.partnerId);
-    await this.channel.send({
-      type: 'broadcast',
-      event: 'signaling',
-      payload: message,
-    });
+    console.log('Preparing offer for:', this.partnerId);
+    await this.sendMessage(message);
   }
 
   async sendAnswer(answer: RTCSessionDescriptionInit) {
-    if (!this.channel) return;
-    
     const message: SignalingMessage = {
       type: 'answer',
       payload: answer,
@@ -82,17 +129,11 @@ export class WebRTCSignaling {
       callId: this.callId,
     };
     
-    console.log('Sending answer to:', this.partnerId);
-    await this.channel.send({
-      type: 'broadcast',
-      event: 'signaling',
-      payload: message,
-    });
+    console.log('Preparing answer for:', this.partnerId);
+    await this.sendMessage(message);
   }
 
   async sendIceCandidate(candidate: RTCIceCandidate) {
-    if (!this.channel) return;
-    
     const message: SignalingMessage = {
       type: 'ice-candidate',
       payload: candidate.toJSON(),
@@ -102,61 +143,56 @@ export class WebRTCSignaling {
     };
     
     console.log('Sending ICE candidate to:', this.partnerId);
-    await this.channel.send({
-      type: 'broadcast',
-      event: 'signaling',
-      payload: message,
-    });
+    await this.sendMessage(message);
   }
 
   disconnect() {
     if (this.channel) {
       console.log('Disconnecting from signaling channel');
+      this.isConnected = false;
       supabase.removeChannel(this.channel);
       this.channel = null;
     }
   }
+
+  get connected() {
+    return this.isConnected;
+  }
 }
 
-// WebRTC configuration with STUN and free TURN servers for better connectivity
+// WebRTC configuration with reliable STUN/TURN servers
 export const getRTCConfiguration = (): RTCConfiguration => ({
   iceServers: [
-    // Google STUN servers
+    // Google STUN servers (reliable)
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:stun3.l.google.com:19302' },
-    { urls: 'stun:stun4.l.google.com:19302' },
-    // Open Relay TURN servers (free public TURN servers)
+    // Twilio STUN (reliable)
+    { urls: 'stun:global.stun.twilio.com:3478' },
+    // Metered TURN servers (free tier - more reliable)
     {
-      urls: 'turn:openrelay.metered.ca:80',
-      username: 'openrelayproject',
-      credential: 'openrelayproject',
+      urls: 'turn:a.relay.metered.ca:80',
+      username: 'e8dd65bea4f26e2c01e86cfe',
+      credential: 'l3w+hZkr3DYpLxOa',
     },
     {
-      urls: 'turn:openrelay.metered.ca:443',
-      username: 'openrelayproject',
-      credential: 'openrelayproject',
+      urls: 'turn:a.relay.metered.ca:80?transport=tcp',
+      username: 'e8dd65bea4f26e2c01e86cfe',
+      credential: 'l3w+hZkr3DYpLxOa',
     },
     {
-      urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-      username: 'openrelayproject',
-      credential: 'openrelayproject',
-    },
-    // Additional free TURN servers
-    {
-      urls: 'turn:relay.metered.ca:80',
-      username: 'free',
-      credential: 'free',
+      urls: 'turn:a.relay.metered.ca:443',
+      username: 'e8dd65bea4f26e2c01e86cfe',
+      credential: 'l3w+hZkr3DYpLxOa',
     },
     {
-      urls: 'turn:relay.metered.ca:443',
-      username: 'free',
-      credential: 'free',
+      urls: 'turns:a.relay.metered.ca:443?transport=tcp',
+      username: 'e8dd65bea4f26e2c01e86cfe',
+      credential: 'l3w+hZkr3DYpLxOa',
     },
   ],
   iceCandidatePoolSize: 10,
-  iceTransportPolicy: 'all', // Use both relay and direct connections
-  bundlePolicy: 'max-bundle', // Bundle all media into one connection
-  rtcpMuxPolicy: 'require', // Multiplex RTP and RTCP on same port
+  iceTransportPolicy: 'all',
+  bundlePolicy: 'max-bundle',
+  rtcpMuxPolicy: 'require',
 });
