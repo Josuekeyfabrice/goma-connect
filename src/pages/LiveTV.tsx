@@ -196,9 +196,8 @@ const LiveTV = () => {
                     src={playerUrl || currentChannel.url}
                     className="w-full h-full border-none"
                     allowFullScreen
-                    allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-                    referrerPolicy="no-referrer"
-                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
+                    allow="autoplay; encrypted-media; fullscreen; picture-in-picture; accelerometer; gyroscope"
+                    referrerPolicy="origin"
                     title="Video Player"
                   ></iframe>
                   {playerUrl && (

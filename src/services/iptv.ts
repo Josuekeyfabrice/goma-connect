@@ -20,31 +20,39 @@ export const iptvService = {
     return `${config.url}/live/${config.username}/${config.password}/${streamId}.${extension}`;
   },
 
-  // Obtenir l'URL d'intégration pour un film (utilise vidsrc.xyz qui fonctionne sans sandbox restrictions)
+  // Source principale: autoembed (très fiable et mise à jour)
   getVidFastMovieUrl: (tmdbId: string) => {
-    return `https://vidsrc.xyz/embed/movie/${tmdbId}`;
+    return `https://player.autoembed.cc/embed/movie/${tmdbId}`;
   },
 
-  // Obtenir l'URL d'intégration pour une série
   getVidFastTVUrl: (tmdbId: string, season: number, episode: number) => {
-    return `https://vidsrc.xyz/embed/tv/${tmdbId}/${season}/${episode}`;
+    return `https://player.autoembed.cc/embed/tv/${tmdbId}/${season}/${episode}`;
   },
 
-  // Alternative: 2embed
-  get2EmbedMovieUrl: (tmdbId: string) => {
-    return `https://www.2embed.cc/embed/${tmdbId}`;
+  // Alternative 1: multiembed
+  getMultiEmbedMovieUrl: (tmdbId: string) => {
+    return `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1`;
   },
 
-  get2EmbedTVUrl: (tmdbId: string, season: number, episode: number) => {
-    return `https://www.2embed.cc/embedtv/${tmdbId}&s=${season}&e=${episode}`;
+  getMultiEmbedTVUrl: (tmdbId: string, season: number, episode: number) => {
+    return `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&s=${season}&e=${episode}`;
   },
 
-  // Alternative: VidSrc.to
-  getVidSrcMovieUrl: (tmdbId: string) => {
-    return `https://vidsrc.to/embed/movie/${tmdbId}`;
+  // Alternative 2: embed.su
+  getEmbedSuMovieUrl: (tmdbId: string) => {
+    return `https://embed.su/embed/movie/${tmdbId}`;
   },
 
-  getVidSrcTVUrl: (tmdbId: string, season: number, episode: number) => {
-    return `https://vidsrc.to/embed/tv/${tmdbId}/${season}/${episode}`;
+  getEmbedSuTVUrl: (tmdbId: string, season: number, episode: number) => {
+    return `https://embed.su/embed/tv/${tmdbId}/${season}/${episode}`;
+  },
+
+  // Alternative 3: vidsrc.cc
+  getVidSrcCCMovieUrl: (tmdbId: string) => {
+    return `https://vidsrc.cc/v2/embed/movie/${tmdbId}`;
+  },
+
+  getVidSrcCCTVUrl: (tmdbId: string, season: number, episode: number) => {
+    return `https://vidsrc.cc/v2/embed/tv/${tmdbId}/${season}/${episode}`;
   }
 };
