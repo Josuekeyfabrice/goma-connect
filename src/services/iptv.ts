@@ -20,23 +20,31 @@ export const iptvService = {
     return `${config.url}/live/${config.username}/${config.password}/${streamId}.${extension}`;
   },
 
-  // Obtenir l'URL d'intégration VidFast pour un film
+  // Obtenir l'URL d'intégration pour un film (utilise vidsrc.xyz qui fonctionne sans sandbox restrictions)
   getVidFastMovieUrl: (tmdbId: string) => {
-    return `https://vidfast.pro/movie/${tmdbId}`;
+    return `https://vidsrc.xyz/embed/movie/${tmdbId}`;
   },
 
-  // Obtenir l'URL d'intégration VidFast pour une série
+  // Obtenir l'URL d'intégration pour une série
   getVidFastTVUrl: (tmdbId: string, season: number, episode: number) => {
-    return `https://vidfast.pro/tv/${tmdbId}/${season}/${episode}`;
+    return `https://vidsrc.xyz/embed/tv/${tmdbId}/${season}/${episode}`;
   },
 
-  // Obtenir l'URL d'intégration VidNest pour un film
-  getVidNestMovieUrl: (tmdbId: string, server: string = 'gama') => {
-    return `https://vidnest.fun/movie/${tmdbId}?server=${server}`;
+  // Alternative: 2embed
+  get2EmbedMovieUrl: (tmdbId: string) => {
+    return `https://www.2embed.cc/embed/${tmdbId}`;
   },
 
-  // Obtenir l'URL d'intégration VidNest pour une série
-  getVidNestTVUrl: (tmdbId: string, season: number, episode: number, server: string = 'alfa') => {
-    return `https://vidnest.fun/tv/${tmdbId}/${season}/${episode}?server=${server}`;
+  get2EmbedTVUrl: (tmdbId: string, season: number, episode: number) => {
+    return `https://www.2embed.cc/embedtv/${tmdbId}&s=${season}&e=${episode}`;
+  },
+
+  // Alternative: VidSrc.to
+  getVidSrcMovieUrl: (tmdbId: string) => {
+    return `https://vidsrc.to/embed/movie/${tmdbId}`;
+  },
+
+  getVidSrcTVUrl: (tmdbId: string, season: number, episode: number) => {
+    return `https://vidsrc.to/embed/tv/${tmdbId}/${season}/${episode}`;
   }
 };
