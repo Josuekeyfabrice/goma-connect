@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Package, Star, Eye, Calendar, MapPin, MessageCircle, Phone } from 'lucide-react';
+import { Package, Star, Eye, Calendar, MapPin, MessageCircle, Phone, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -84,29 +84,15 @@ const SellerProfile = () => {
         ? Math.round((reviewsData?.reduce((sum, r) => sum + r.rating, 0) || 0) / totalReviews * 10) / 10
         : 0;
 
-      // Fetch followers count
-      const { count: followersCount } = await supabase
-        .from('followers')
-        .select('*', { count: 'exact', head: true })
-        .eq('seller_id', sellerId);
-
-      // Check if current user is following
-      if (user) {
-        const { data: followData } = await supabase
-          .from('followers')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('seller_id', sellerId)
-          .single();
-        setIsFollowing(!!followData);
-      }
+      // Followers feature not yet implemented
+      const followersCount = 0;
 
       setStats({
         totalProducts: productsData?.length || 0,
         totalViews,
         averageRating,
         totalReviews,
-        followersCount: followersCount || 0,
+        followersCount,
       });
     } catch (error) {
       console.error('Error fetching seller data:', error);
@@ -145,26 +131,8 @@ const SellerProfile = () => {
   };
 
   const handleFollow = async () => {
-    if (!user) return;
-    try {
-      if (isFollowing) {
-        await supabase
-          .from('followers')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('seller_id', sellerId);
-        setIsFollowing(false);
-        setStats(prev => ({ ...prev, followersCount: prev.followersCount - 1 }));
-      } else {
-        await supabase
-          .from('followers')
-          .insert({ user_id: user.id, seller_id: sellerId });
-        setIsFollowing(true);
-        setStats(prev => ({ ...prev, followersCount: prev.followersCount + 1 }));
-      }
-    } catch (error) {
-      console.error('Error toggling follow:', error);
-    }
+    // Followers feature not yet implemented
+    console.log('Followers feature coming soon');
   };
 
   if (loading) {

@@ -101,11 +101,16 @@ export const useMessagingRealtime = ({
 
             // Auto-mark as read if receiver
             if (newMessage.receiver_id === userId && !newMessage.is_read) {
-              supabase
-                .from('messages')
-                .update({ is_read: true })
-                .eq('id', newMessage.id)
-                .catch(console.error);
+              (async () => {
+                try {
+                  await supabase
+                    .from('messages')
+                    .update({ is_read: true })
+                    .eq('id', newMessage.id);
+                } catch (err) {
+                  console.error('Error marking message as read:', err);
+                }
+              })();
             }
           }
         }

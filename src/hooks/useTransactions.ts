@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { supabase } from "@/integrations/supabase/client";
 
+// Placeholder - transactions table not yet implemented
 export interface Transaction {
   id: string;
   buyer_id: string;
@@ -25,139 +25,29 @@ export const useTransactions = () => {
     amount: number,
     paymentMethod: string = 'Mobile Money'
   ): Promise<Transaction | null> => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { data, error } = await supabase
-        .from('transactions')
-        .insert([
-          {
-            buyer_id: buyerId,
-            seller_id: sellerId,
-            product_id: productId,
-            amount,
-            payment_method: paymentMethod,
-            status: 'pending',
-            escrow_status: 'waiting'
-          }
-        ])
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data as Transaction;
-    } catch (err: any) {
-      console.error('Error creating transaction:', err);
-      setError(err.message);
-      return null;
-    } finally {
-      setLoading(false);
-    }
+    console.log('Transactions not yet implemented');
+    setError('Transactions not yet implemented');
+    return null;
   }, []);
 
   const confirmPayment = useCallback(async (transactionId: string): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { error } = await supabase
-        .from('transactions')
-        .update({ 
-          status: 'paid', 
-          escrow_status: 'held' 
-        })
-        .eq('id', transactionId);
-
-      if (error) throw error;
-      return true;
-    } catch (err: any) {
-      console.error('Error confirming payment:', err);
-      setError(err.message);
-      return false;
-    } finally {
-      setLoading(false);
-    }
+    console.log('Transactions not yet implemented');
+    return false;
   }, []);
 
   const confirmDelivery = useCallback(async (transactionId: string): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { error } = await supabase
-        .from('transactions')
-        .update({ 
-          status: 'completed', 
-          escrow_status: 'released' 
-        })
-        .eq('id', transactionId);
-
-      if (error) throw error;
-      return true;
-    } catch (err: any) {
-      console.error('Error confirming delivery:', err);
-      setError(err.message);
-      return false;
-    } finally {
-      setLoading(false);
-    }
+    console.log('Transactions not yet implemented');
+    return false;
   }, []);
 
   const cancelTransaction = useCallback(async (transactionId: string): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { error } = await supabase
-        .from('transactions')
-        .update({ 
-          status: 'cancelled', 
-          escrow_status: 'refunded' 
-        })
-        .eq('id', transactionId);
-
-      if (error) throw error;
-      return true;
-    } catch (err: any) {
-      console.error('Error cancelling transaction:', err);
-      setError(err.message);
-      return false;
-    } finally {
-      setLoading(false);
-    }
+    console.log('Transactions not yet implemented');
+    return false;
   }, []);
 
   const disputeTransaction = useCallback(async (transactionId: string, reason: string): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { error } = await supabase
-        .from('transactions')
-        .update({ 
-          status: 'disputed'
-        })
-        .eq('id', transactionId);
-
-      if (error) throw error;
-      
-      // Optionnel: Créer un rapport de litige
-      await supabase.from('reports').insert([{
-        reporter_id: (await supabase.auth.getUser()).data.user?.id,
-        reason: 'Transaction Dispute',
-        description: `Dispute for transaction ${transactionId}: ${reason}`,
-        status: 'pending'
-      }]);
-
-      return true;
-    } catch (err: any) {
-      console.error('Error disputing transaction:', err);
-      setError(err.message);
-      return false;
-    } finally {
-      setLoading(false);
-    }
+    console.log('Transactions not yet implemented');
+    return false;
   }, []);
 
   return {
