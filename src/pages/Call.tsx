@@ -201,8 +201,15 @@ const Call = () => {
     }
 
     console.log('Initializing WebRTC, isInitiator:', isInitiator, 'callId:', callId);
+    setCallStatus('connecting');
 
     try {
+      // Cleanup any existing signaling first
+      if (signalingRef.current) {
+        signalingRef.current.disconnect();
+        signalingRef.current = null;
+      }
+
       // First, set up signaling channel and wait for it to be ready
       signalingRef.current = new WebRTCSignaling(
         callId,
@@ -211,9 +218,11 @@ const Call = () => {
         handleSignalingMessage
       );
       
+      console.log('Attempting to connect to signaling server...');
       const signalingConnected = await signalingRef.current.connect();
+      
       if (!signalingConnected) {
-        throw new Error('Impossible de se connecter au serveur de signalisation');
+        throw new Error('Impossible de se connecter au serveur de signalisation. Vérifiez votre connexion internet.');
       }
       console.log('Signaling channel connected successfully');
 
@@ -232,12 +241,17 @@ const Call = () => {
         } : false,
       };
 
-      let stream;
+      let stream: MediaStream;
       try {
         stream = await navigator.mediaDevices.getUserMedia(constraints);
       } catch (e) {
         console.error('Failed to get media with ideal constraints, trying fallback', e);
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: callType === 'video' });
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: callType === 'video' });
+        } catch (e2) {
+          console.error('Failed to get media with fallback constraints', e2);
+          throw new Error("Impossible d'accéder au microphone. Veuillez autoriser l'accès.");
+        }
       }
       localStreamRef.current = stream;
       
@@ -348,8 +362,8 @@ const Call = () => {
       if (isInitiator && !hasCreatedOfferRef.current) {
         hasCreatedOfferRef.current = true;
         
-        // Small delay to ensure everything is set up
-        await new Promise(resolve => setTimeout(resolve, 300));
+        // Wait for signaling to be fully ready
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         if (pc.signalingState === 'closed') {
           console.error('Cannot create offer: PeerConnection is closed');
@@ -364,15 +378,21 @@ const Call = () => {
         
         await pc.setLocalDescription(offer);
         console.log('Local description set, sending offer');
-        await signalingRef.current.sendOffer(offer);
-        console.log('Offer sent successfully');
+        
+        const offerSent = await signalingRef.current.sendOffer(offer);
+        if (offerSent) {
+          console.log('Offer sent successfully');
+        } else {
+          console.error('Failed to send offer');
+        }
       }
 
     } catch (error) {
       console.error('WebRTC initialization error:', error);
+      setCallStatus('ended');
       toast({
         title: "Erreur de connexion",
-        description: error instanceof Error ? error.message : "Impossible d'accéder à la caméra/micro",
+        description: error instanceof Error ? error.message : "Impossible d'établir la connexion",
         variant: "destructive",
       });
     }
