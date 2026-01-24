@@ -48,55 +48,53 @@ const LoadingSpinner = () => (
 );
 
 const App = () => (
-  <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-        <TooltipProvider>
-          <CompareProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <AuthProvider>
-                <OfflineIndicator />
-                <IncomingCallDialogNew />
-                <Suspense fallback={<LoadingSpinner />}>
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/auth" element={<Auth />} />
-                    <Route path="/reset-password" element={<ResetPassword />} />
-                    <Route path="/sell" element={<Sell />} />
-                    <Route path="/profile" element={<Profile />} />
-                    <Route path="/messages" element={<Messages />} />
-                    <Route path="/call/:userId" element={<Call />} />
-                    <Route path="/call-history" element={<CallHistory />} />
-                    <Route path="/product/:id" element={<ProductDetail />} />
-                    <Route path="/my-products" element={<MyProducts />} />
-                    <Route path="/favorites" element={<Favorites />} />
-                    <Route path="/search" element={<Search />} />
-                    <Route path="/edit-product/:id" element={<EditProduct />} />
-                    <Route path="/transactions" element={<Transactions />} />
-                    <Route path="/proximity-map" element={<ProximityMap />} />
-                    <Route path="/seller-dashboard" element={<SellerDashboard />} />
-                    <Route path="/live-shopping" element={<LiveShopping />} />
-                    <Route path="/seller-public/:sellerId" element={<SellerPublicProfile />} />
-                    <Route path="/admin" element={<Admin />} />
-                    <Route path="/seller/:sellerId" element={<SellerProfile />} />
-                    <Route path="/compare" element={<Compare />} />
-                    <Route path="/install" element={<Install />} />
-                    <Route path="/live-tv" element={<LiveTV />} />
-                    <Route path="/verify-seller" element={<VerifySeller />} />
-                    <Route path="/wallet" element={<Wallet />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </Suspense>
-                <CompareBar />
-              </AuthProvider>
-            </BrowserRouter>
-          </CompareProvider>
-        </TooltipProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
-  </React.StrictMode>
+  <QueryClientProvider client={queryClient}>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+      <TooltipProvider>
+        <CompareProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AuthProvider>
+              <OfflineIndicator />
+              <IncomingCallDialogNew />
+              <Suspense fallback={<LoadingSpinner />}>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/sell" element={<Sell />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/messages" element={<Messages />} />
+                  <Route path="/call/:userId" element={<Call />} />
+                  <Route path="/call-history" element={<CallHistory />} />
+                  <Route path="/product/:id" element={<ProductDetail />} />
+                  <Route path="/my-products" element={<MyProducts />} />
+                  <Route path="/favorites" element={<Favorites />} />
+                  <Route path="/search" element={<Search />} />
+                  <Route path="/edit-product/:id" element={<EditProduct />} />
+                  <Route path="/transactions" element={<Transactions />} />
+                  <Route path="/proximity-map" element={<ProximityMap />} />
+                  <Route path="/seller-dashboard" element={<SellerDashboard />} />
+                  <Route path="/live-shopping" element={<LiveShopping />} />
+                  <Route path="/seller-public/:sellerId" element={<SellerPublicProfile />} />
+                  <Route path="/admin" element={<Admin />} />
+                  <Route path="/seller/:sellerId" element={<SellerProfile />} />
+                  <Route path="/compare" element={<Compare />} />
+                  <Route path="/install" element={<Install />} />
+                  <Route path="/live-tv" element={<LiveTV />} />
+                  <Route path="/verify-seller" element={<VerifySeller />} />
+                  <Route path="/wallet" element={<Wallet />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+              <CompareBar />
+            </AuthProvider>
+          </BrowserRouter>
+        </CompareProvider>
+      </TooltipProvider>
+    </ThemeProvider>
+  </QueryClientProvider>
 );
 
 export default App;
