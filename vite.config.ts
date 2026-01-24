@@ -14,6 +14,10 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
+            // Keep React together to avoid multiple instances
+            if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
+              return 'react-core';
+            }
             if (id.includes('mapbox-gl')) return 'maps';
             if (id.includes('recharts')) return 'charts';
             if (id.includes('framer-motion')) return 'animations';
@@ -35,5 +39,9 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    dedupe: ['react', 'react-dom'],
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom'],
   },
 }));
